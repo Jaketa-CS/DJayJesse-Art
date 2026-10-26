@@ -41,8 +41,8 @@ describe('ComicReaderComponent', () => {
     (compiled.querySelector('[data-testid="page-indicator"]') ||
       compiled.querySelector('[data-testid="progress-text"]')) as HTMLElement;
 
-  const getProgressBar = (): HTMLElement =>
-    compiled.querySelector('[data-testid="progress-bar"]') as HTMLElement;
+  const getProgressBar = (): HTMLElement | null =>
+    compiled.querySelector('[data-testid="progress-bar"]');
 
   beforeEach(async () => {
     queryParamMap$ = new BehaviorSubject<ParamMap>(convertToParamMap({}));
@@ -119,7 +119,7 @@ describe('ComicReaderComponent', () => {
       expect(indicator.textContent).toContain('313');
 
       const progressBar = getProgressBar();
-      expect(progressBar).toBeTruthy();
+      expect(progressBar).toBeNull();
     });
   });
 
@@ -174,27 +174,12 @@ describe('ComicReaderComponent', () => {
       expect(getImage().getAttribute('src')).toBe('/comic-pages/Act1.6.png');
     });
 
-    it('should support tap overlays for previous and next navigation', () => {
-      component.jumpToPage(5);
-      fixture.detectChanges();
+    it('should present a clean comic stage without hover overlay zones', () => {
+      const overlayPrev = compiled.querySelector('[data-testid="overlay-prev"]');
+      const overlayNext = compiled.querySelector('[data-testid="overlay-next"]');
 
-      const overlayPrev = compiled.querySelector(
-        '[data-testid="overlay-prev"]'
-      ) as HTMLButtonElement;
-      const overlayNext = compiled.querySelector(
-        '[data-testid="overlay-next"]'
-      ) as HTMLButtonElement;
-
-      expect(overlayPrev).toBeTruthy();
-      expect(overlayNext).toBeTruthy();
-
-      overlayNext.click();
-      fixture.detectChanges();
-      expect(component.currentIndex).toBe(6);
-
-      overlayPrev.click();
-      fixture.detectChanges();
-      expect(component.currentIndex).toBe(5);
+      expect(overlayPrev).toBeNull();
+      expect(overlayNext).toBeNull();
     });
   });
 

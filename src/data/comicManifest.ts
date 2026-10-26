@@ -105,17 +105,19 @@ export function buildComicCatalog(filenames: string[] = ALL_COMIC_FILENAMES): Co
   const acts: ComicActInfo[] = [];
   for (let a = 1; a <= 5; a++) {
     const actPages = pages.filter((p) => p.act === a);
-    if (actPages.length > 0) {
+    const firstPage = actPages[0];
+    const lastPage = actPages.at(-1);
+    if (firstPage && lastPage) {
       acts.push({
         act: a,
         romanNumeral: romanNumerals[a],
         title: `Act ${romanNumerals[a]}`,
         pageCount: actPages.length,
-        startGlobalIndex: actPages[0].globalIndex,
-        endGlobalIndex: actPages[actPages.length - 1].globalIndex,
-        firstPageId: actPages[0].id,
-        lastPageId: actPages[actPages.length - 1].id,
-        firstPageFilename: actPages[0].filename,
+        startGlobalIndex: firstPage.globalIndex,
+        endGlobalIndex: lastPage.globalIndex,
+        firstPageId: firstPage.id,
+        lastPageId: lastPage.id,
+        firstPageFilename: firstPage.filename,
       });
     }
   }

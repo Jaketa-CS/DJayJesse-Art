@@ -63,3 +63,35 @@ Create logical, incremental Git commits in `/home/jake/SANDBOX/DJayJesse-Art` as
 - [ ] `.github/workflows/ci.yml` and `.github/workflows/codeql.yml` exist, use the flat root paths, and include Lint, Unit Test + Coverage + Build, Playwright E2E, SonarQube scan, TruffleHog secret scan, Trivy dependency scan, and CodeQL analysis.
 - [ ] `sonar-project.properties`, `.prettierrc`, `.editorconfig`, `eslint.config.js`, and `.husky/` are present and properly configured.
 - [ ] `git log` shows multiple incremental commits with concise, educative commit messages, zero mentions of Gemini/AI/Co-authored-by AI, and `git status` is clean at completion.
+
+
+## Follow-up — 2026-10-26T01:27:39Z
+
+URGENT USER DESIGN CHANGE REQUEST — Please forward immediately to the active Project Orchestrator and ensure it is implemented, tested, and committed before completion:
+
+The user reviewed the live app and requested the following visual/UI adjustments:
+1. **Use pure blacks and neutral grays instead of dark blues (`slate-*` / `sky-*` / `indigo-*`)**:
+   - Replace all `slate-*`, `sky-*`, and `indigo-*` classes across `index.html`, `src/index.css`, `src/app/app.component.ts`, and `src/app/components/comic-reader/comic-reader.component.html` with neutral blacks, grays, and white (`bg-black`, `bg-neutral-950`, `bg-neutral-900`, `bg-neutral-800`, `border-neutral-800`, `border-neutral-700`, `text-white`, `text-neutral-200`, `text-neutral-400`, etc.).
+   - Update `<meta name="theme-color" content="#0a0a0a" />` in `index.html`.
+2. **Make the styling simpler and less "modern/techy"**:
+   - Remove the `⚡` lightning bolt icon, pulsing dots (`animate-pulse`), neon blue button/badge glows, and overly techy badges/borders. Keep the header, controls, and comic stage clean, minimal, understated, and focused on the artwork in monochrome black/gray/white.
+3. **Remove the progress bar**:
+   - Remove the visual reading progress bar (`role="progressbar"` / `data-testid="progress-bar"`) from `src/app/components/comic-reader/comic-reader.component.html`.
+   - Update any unit/component/challenge tests in `src/app/components/comic-reader/*.spec.ts` (and Playwright E2E tests) that check for `progress-bar` or `slate`/`sky` classes so all Vitest and Playwright tests pass cleanly with the new neutral black/gray minimal styling and no progress bar.
+4. **Also add `"start": "vite"` to `package.json` scripts** so both `npm start` and `npm run dev` work.
+5. Commit this styling update with a concise, educative commit message (no AI/Gemini mentions).
+
+
+## Follow-up — 2026-10-26T01:29:52Z
+
+URGENT FOLLOW-UP USER UI SIMPLIFICATION REQUEST — Forward immediately to the Project Orchestrator:
+
+The user clarified they want the UI stripped down to be **very basic and simple** ("remove most of the styling actually, thunder art was just me, djayjesse should be pretty basic, i want to keep it pretty simple for now, like it should be just the comic in the middle with centered below it left and right arrows"):
+
+1. **Ultra-basic layout (remove bulky headers, cards, boxes, badges, overlays, and footers)**:
+   - Simple dark/black background (`bg-neutral-950` or `bg-black`) with white text (`text-white`).
+   - Simple plain text title (`DJayJesse-Art`) at the top (no sticky navbar card, no "313 Pages • Acts 1-5" pill badge, no footer banner, no keyboard shortcut hint card).
+   - **Comic image centered in the middle** of the page (clean `<img>` without heavy nested border cards/containers or hover overlay zones).
+   - **Centered directly below the comic image**: Left (`←`) and Right (`→`) arrow buttons (`data-testid="prev-button"` and `data-testid="next-button"`) to go to the previous and next page, along with a simple, unobtrusive page indicator / Act & Page jump select so all existing unit/E2E test selectors (`data-testid="prev-button"`, `data-testid="next-button"`, `data-testid="comic-image"`, `data-testid="page-indicator"`, `data-testid="act-select"`, `data-testid="page-select"`) still work while keeping the visual presentation super minimal: comic in the middle, left/right arrow controls centered underneath!
+2. **Update any unit/component/E2E tests** that depended on removed elements (`progress-bar`, `overlay-prev`, `overlay-next`, `keyboard-hint`, etc.) so `npm test`, `npm run lint`, `npm run format:check`, `npm run build`, and `npm run test:e2e` all pass 100%.
+3. Commit with a concise, educative commit message (no AI/Gemini mentions).

@@ -25,11 +25,11 @@ describe('Milestone 2 Adversarial Challenge — ComicReaderComponent', () => {
   const getPageSelect = (): HTMLSelectElement =>
     compiled.querySelector('[data-testid="page-select"]') as HTMLSelectElement;
 
-  const getOverlayPrev = (): HTMLElement =>
-    compiled.querySelector('[data-testid="overlay-prev"]') as HTMLElement;
+  const getOverlayPrev = (): HTMLElement | null =>
+    compiled.querySelector('[data-testid="overlay-prev"]');
 
-  const getOverlayNext = (): HTMLElement =>
-    compiled.querySelector('[data-testid="overlay-next"]') as HTMLElement;
+  const getOverlayNext = (): HTMLElement | null =>
+    compiled.querySelector('[data-testid="overlay-next"]');
 
   beforeEach(async () => {
     queryParamMap$ = new BehaviorSubject<ParamMap>(convertToParamMap({}));
@@ -326,12 +326,16 @@ describe('Milestone 2 Adversarial Challenge — ComicReaderComponent', () => {
       expect(component.currentIndex).toBe(4);
     });
 
-    it('should continue keyboard navigation after clicking Tap Overlays', () => {
+    it('should verify overlays are removed while keyboard navigation remains responsive', () => {
       expect(component.currentIndex).toBe(0);
 
       const overlayNext = getOverlayNext();
-      expect(overlayNext).toBeTruthy();
-      overlayNext.click();
+      const overlayPrev = getOverlayPrev();
+      expect(overlayNext).toBeNull();
+      expect(overlayPrev).toBeNull();
+
+      // Keyboard navigation continues to advance and rewind seamlessly
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
       fixture.detectChanges();
       expect(component.currentIndex).toBe(1);
 
@@ -339,15 +343,9 @@ describe('Milestone 2 Adversarial Challenge — ComicReaderComponent', () => {
       fixture.detectChanges();
       expect(component.currentIndex).toBe(2);
 
-      const overlayPrev = getOverlayPrev();
-      expect(overlayPrev).toBeTruthy();
-      overlayPrev.click();
-      fixture.detectChanges();
-      expect(component.currentIndex).toBe(1);
-
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
       fixture.detectChanges();
-      expect(component.currentIndex).toBe(0);
+      expect(component.currentIndex).toBe(1);
     });
   });
 
