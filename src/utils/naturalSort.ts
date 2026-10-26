@@ -6,7 +6,7 @@
 export interface ComicPageKey {
   act: number;
   pageNum: number;
-  subPage: string; // "" for standard pages, "a", "b", etc. for sub-pages
+  subPage: string;
   filename: string;
 }
 
@@ -14,17 +14,17 @@ export const COMIC_FILENAME_REGEX = /^Act(\d+)\.(\d+)([a-zA-Z]*)\.png$/;
 
 /**
  * Parses a comic filename conforming to `Act<act>.<page><subpage>.png`.
- * Throws an Error if filename does not match expected format.
+ * Throws an Error if the filename does not match the expected format.
  */
 export function parseComicPageKey(filename: string): ComicPageKey {
-  const match = filename.match(COMIC_FILENAME_REGEX);
+  const match = COMIC_FILENAME_REGEX.exec(filename);
   if (!match) {
     throw new Error(`Filename does not conform to comic page pattern: "${filename}"`);
   }
 
   return {
-    act: parseInt(match[1], 10),
-    pageNum: parseInt(match[2], 10),
+    act: Number.parseInt(match[1], 10),
+    pageNum: Number.parseInt(match[2], 10),
     subPage: match[3].toLowerCase(),
     filename,
   };

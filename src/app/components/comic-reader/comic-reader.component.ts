@@ -1,17 +1,20 @@
 import {
+  AfterViewChecked,
+  AfterViewInit,
+  ChangeDetectorRef,
   Component,
-  OnInit,
-  OnDestroy,
+  ElementRef,
   HostListener,
   inject,
-  ChangeDetectorRef,
+  OnDestroy,
+  OnInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { comicPages, comicActs, ComicPageItem, ComicActInfo } from '@/data/comicManifest';
+import { ComicActInfo, comicActs, ComicPageItem, comicPages } from '@/data/comicManifest';
 
 @Component({
   selector: 'app-comic-reader',
@@ -19,11 +22,11 @@ import { comicPages, comicActs, ComicPageItem, ComicActInfo } from '@/data/comic
   imports: [CommonModule, FormsModule],
   templateUrl: './comic-reader.component.html',
 })
-export class ComicReaderComponent implements OnInit, OnDestroy {
-  // Dependencies (optional injection ensures zero breakage in headless unit tests)
+export class ComicReaderComponent implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy {
   private readonly router = inject(Router, { optional: true });
   private readonly route = inject(ActivatedRoute, { optional: true });
   private readonly cdr = inject(ChangeDetectorRef, { optional: true });
+  private readonly elRef = inject<ElementRef<HTMLElement>>(ElementRef, { optional: true });
   private readonly destroy$ = new Subject<void>();
 
   // Catalog Data
@@ -88,8 +91,8 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     return this.currentIndex;
   }
   set selectedPageIndex(val: number | string) {
-    const num = typeof val === 'number' ? val : parseInt(String(val), 10);
-    if (!isNaN(num)) {
+    const num = typeof val === 'number' ? val : Number.parseInt(String(val), 10);
+    if (!Number.isNaN(num)) {
       this.jumpToPage(num);
     }
   }
@@ -98,8 +101,8 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     return this.currentPage.act;
   }
   set selectedAct(val: number | string) {
-    const num = typeof val === 'number' ? val : parseInt(String(val), 10);
-    if (!isNaN(num)) {
+    const num = typeof val === 'number' ? val : Number.parseInt(String(val), 10);
+    if (!Number.isNaN(num)) {
       this.jumpToAct(num);
     }
   }
@@ -120,8 +123,8 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
             this.setPageIndex(resolvedIndex, false);
           }
         } else if (actParam !== null) {
-          const actNum = parseInt(actParam, 10);
-          if (!isNaN(actNum) && actNum >= 1 && actNum <= 5) {
+          const actNum = Number.parseInt(actParam, 10);
+          if (!Number.isNaN(actNum) && actNum >= 1 && actNum <= 5) {
             const act = this.acts.find((a) => a.act === actNum);
             if (act && act.startGlobalIndex !== this.currentIndex) {
               this.setPageIndex(act.startGlobalIndex, false);
@@ -132,6 +135,27 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     }
 
     this.preloadAdjacentPages();
+  }
+
+  ngAfterViewInit(): void {
+    const host = this.elRef?.nativeElement;
+    if (!host) return;
+
+    const actSelect = host.querySelector<HTMLSelectElement>('#act-select');
+    if (actSelect) {
+      actSelect.addEventListener('change', (e) => this.onActSelect(e));
+    }
+
+    const pageSelect = host.querySelector<HTMLSelectElement>('#page-select');
+    if (pageSelect) {
+      pageSelect.addEventListener('change', (e) => this.onPageSelect(e));
+    }
+
+    this.syncSelectValues();
+  }
+
+  ngAfterViewChecked(): void {
+    this.syncSelectValues();
   }
 
   ngOnDestroy(): void {
@@ -154,8 +178,8 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   }
 
   jumpToPage(index: number | string): void {
-    const numericIndex = typeof index === 'number' ? index : parseInt(String(index), 10);
-    if (isNaN(numericIndex)) return;
+    const numericIndex = typeof index === 'number' ? index : Number.parseInt(String(index), 10);
+    if (Number.isNaN(numericIndex)) return;
     const intIndex = Math.floor(numericIndex);
     if (intIndex < 0 || intIndex >= this.totalPages) {
       return; // Ignore out-of-bounds indices
@@ -165,8 +189,9 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   }
 
   jumpToAct(actNumber: number | string): void {
-    const actNum = typeof actNumber === 'number' ? actNumber : parseInt(String(actNumber), 10);
-    if (isNaN(actNum)) return;
+    const actNum =
+      typeof actNumber === 'number' ? actNumber : Number.parseInt(String(actNumber), 10);
+    if (Number.isNaN(actNum)) return;
     const targetAct = this.acts.find((a) => a.act === actNum);
     if (targetAct) {
       this.jumpToPage(targetAct.startGlobalIndex);
@@ -232,8 +257,16 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   }
 
   // -------------------------------------------------------------
-  // Keyboard Navigation with Focus Guard
+  // Keyboard and Host Click Navigation
   // -------------------------------------------------------------
+
+  @HostListener('click', ['$event'])
+  onHostClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (target?.id === 'comic-page-image' || target?.dataset['testid'] === 'comic-image') {
+      this.nextPage();
+    }
+  }
 
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
@@ -272,7 +305,7 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
       }
       const ceProp = el.contentEditable;
       const ceAttr = el.getAttribute('contenteditable');
-      if (
+      return (
         el.isContentEditable ||
         ceProp === 'true' ||
         ceProp === '' ||
@@ -280,21 +313,13 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
         ceAttr === '' ||
         el.getAttribute('role') === 'textbox' ||
         Boolean(el.closest?.('[contenteditable="true"], [contenteditable=""]'))
-      ) {
-        return true;
-      }
-      return false;
+      );
     };
 
     if (event && isControl(event.target as Element)) {
       return true;
     }
-
-    if (typeof document !== 'undefined' && isControl(document.activeElement)) {
-      return true;
-    }
-
-    return false;
+    return typeof document !== 'undefined' && isControl(document.activeElement);
   }
 
   // -------------------------------------------------------------
@@ -310,8 +335,26 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     if (syncRouter) {
       this.syncUrlWithCurrentPage();
     }
+    this.syncSelectValues();
     this.preloadAdjacentPages();
     this.cdr?.markForCheck();
+  }
+
+  private syncSelectValues(): void {
+    const host = this.elRef?.nativeElement;
+    if (!host) return;
+
+    const actSelect = host.querySelector<HTMLSelectElement>('#act-select');
+    const actValue = String(this.currentAct.act);
+    if (actSelect && actSelect.value !== actValue) {
+      actSelect.value = actValue;
+    }
+
+    const pageSelect = host.querySelector<HTMLSelectElement>('#page-select');
+    const pageValue = String(this.currentIndex);
+    if (pageSelect && pageSelect.value !== pageValue) {
+      pageSelect.value = pageValue;
+    }
   }
 
   private syncUrlWithCurrentPage(): void {
@@ -328,7 +371,7 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
           replaceUrl: true,
         })
         .catch(() => {
-          // Gracefully suppress rejection in test or detached navigation
+          // handle
         });
     }
   }
@@ -338,8 +381,8 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     const trimmed = param.trim();
 
     // 1-based numeric page index
-    const num = parseInt(trimmed, 10);
-    if (!isNaN(num) && /^\d+$/.test(trimmed)) {
+    const num = Number.parseInt(trimmed, 10);
+    if (!Number.isNaN(num) && /^\d+$/.test(trimmed)) {
       if (num >= 1 && num <= this.totalPages) {
         return num - 1;
       }

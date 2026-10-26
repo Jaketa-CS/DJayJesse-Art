@@ -1,6 +1,6 @@
 # DJayJesse
 
-Dark-mode storyboard and comic showcase built with Angular, TypeScript, Tailwind CSS, and Vitest.
+Comic showcase built with Angular, TypeScript, Tailwind CSS, and Vitest.
 
 ## Quick Start
 

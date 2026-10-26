@@ -1,7 +1,6 @@
-<section
+<div
   class="flex flex-col flex-1 items-center justify-center w-full px-4 py-4 gap-4 select-none"
   data-testid="comic-reader-container"
-  aria-label="Comic Storyboard Reader"
 >
   <!-- 1. Comic Image Centered in the Middle -->
   <div class="relative flex items-center justify-center w-full max-w-5xl">
@@ -10,45 +9,46 @@
       data-testid="comic-image"
       data-test="comic-page-image"
       [src]="currentPage.src"
-      [alt]="currentPage.pageLabel"
-      (click)="nextPage()"
-      (keydown)="$event.key === 'Enter' && nextPage()"
+      alt="{{ currentPage.pageLabel }}"
       (load)="onImageLoad()"
       (error)="onImageError()"
-      class="max-h-[75vh] w-auto max-w-full object-contain block mx-auto transition-opacity duration-150"
-      [class.cursor-pointer]="!isLastPage"
-      [class.opacity-0]="!imageLoaded && !imageError"
-      [class.opacity-100]="imageLoaded"
+      class="max-h-[75vh] w-auto max-w-full object-contain block mx-auto transition-opacity duration-150 {{
+        !isLastPage ? 'cursor-pointer' : ''
+      }} {{ !imageLoaded && !imageError ? 'opacity-0' : '' }} {{
+        imageLoaded ? 'opacity-100' : ''
+      }}"
       loading="eager"
       decoding="async"
     />
 
     <!-- Minimal Image Loading Indicator -->
-    <div
-      *ngIf="!imageLoaded && !imageError"
-      data-testid="image-loading-indicator"
-      class="absolute text-neutral-400 text-sm font-medium tracking-wide"
-      aria-live="polite"
-    >
-      Loading...
-    </div>
+    @if (!imageLoaded && !imageError) {
+      <div
+        data-testid="image-loading-indicator"
+        class="absolute text-neutral-400 text-sm font-medium tracking-wide"
+        aria-live="polite"
+      >
+        Loading...
+      </div>
+    }
 
     <!-- Minimal Image Error Fallback -->
-    <div
-      *ngIf="imageError"
-      data-testid="image-error-fallback"
-      class="absolute text-center text-neutral-400 text-sm p-4 bg-neutral-900 border border-neutral-800 rounded"
-    >
-      <p class="font-semibold text-neutral-200">Unable to load comic page</p>
-      <p class="text-xs text-neutral-500 font-mono mt-1">{{ currentPage.filename }}</p>
-      <button
-        type="button"
-        (click)="onImageLoad()"
-        class="mt-2 text-xs px-2.5 py-1 rounded bg-neutral-800 text-neutral-300 hover:bg-neutral-700 transition-colors"
+    @if (imageError) {
+      <div
+        data-testid="image-error-fallback"
+        class="absolute text-center text-neutral-400 text-sm p-4 bg-neutral-900 border border-neutral-800 rounded"
       >
-        Retry
-      </button>
-    </div>
+        <p class="font-semibold text-neutral-200">Unable to load comic page</p>
+        <p class="text-xs text-neutral-500 font-mono mt-1">{{ currentPage.filename }}</p>
+        <button
+          type="button"
+          (click)="onImageLoad()"
+          class="mt-2 text-xs px-2.5 py-1 rounded bg-neutral-800 text-neutral-300 hover:bg-neutral-700 transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    }
   </div>
 
   <!-- 2. Centered Directly Below Comic: Left (←) and Right (→) Arrows, Indicator, and Jump Selects -->
@@ -61,10 +61,10 @@
       data-test="prev-page-btn"
       (click)="previousPage()"
       [disabled]="isFirstPage"
-      aria-label="Previous Page"
       class="px-3 py-1.5 rounded bg-neutral-900 hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed text-white border border-neutral-800 transition-colors cursor-pointer"
     >
-      ←
+      <span aria-hidden="true">←</span>
+      <span class="sr-only">Previous Page</span>
     </button>
 
     <!-- Simple Page Indicator -->
@@ -85,10 +85,10 @@
       data-test="next-page-btn"
       (click)="nextPage()"
       [disabled]="isLastPage"
-      aria-label="Next Page"
       class="px-3 py-1.5 rounded bg-neutral-900 hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed text-white border border-neutral-800 transition-colors cursor-pointer"
     >
-      →
+      <span aria-hidden="true">→</span>
+      <span class="sr-only">Next Page</span>
     </button>
 
     <!-- Unobtrusive Act & Page Jump Selectors -->
@@ -97,33 +97,35 @@
       <select
         id="act-select"
         data-testid="act-select"
-        [value]="currentAct.act"
-        (change)="onActSelect($event)"
         class="bg-neutral-900 border border-neutral-800 text-neutral-300 text-xs rounded px-2 py-1.5 focus:outline-none focus:border-neutral-600 transition-colors cursor-pointer"
-        aria-label="Select Act"
       >
-        <option *ngFor="let act of acts" [value]="act.act">Act {{ act.act }}</option>
+        @for (act of acts; track act.Act) {
+          <option value="{{ act.act }}">Act {{ act.act }}</option>
+        }
       </select>
 
       <label for="page-select" class="sr-only">Jump to Page</label>
       <select
         id="page-select"
         data-testid="page-select"
-        [value]="currentIndex"
-        (change)="onPageSelect($event)"
         class="bg-neutral-900 border border-neutral-800 text-neutral-300 text-xs rounded px-2 py-1.5 focus:outline-none focus:border-neutral-600 transition-colors cursor-pointer max-w-[130px] truncate"
-        aria-label="Select Page"
       >
-        <option *ngFor="let p of pages; let i = index" [value]="i">
-          {{ p.pageLabel }}
-        </option>
+        @for (p of pages; track p.id; let i = $index) {
+          <option value="{{ i }}">
+            {{ p.pageLabel }}
+          </option>
+        }
       </select>
     </div>
   </div>
 
   <!-- 3. Hidden Image Preloader Container -->
   <div class="hidden" aria-hidden="true" style="display: none">
-    <img *ngIf="hasNextPage" [src]="pages[currentIndex + 1].src" alt="" fetchpriority="low" />
-    <img *ngIf="hasPreviousPage" [src]="pages[currentIndex - 1].src" alt="" fetchpriority="low" />
+    @if (hasNextPage) {
+      <img [src]="pages[currentIndex + 1].src" alt="" fetchpriority="low" />
+    }
+    @if (hasPreviousPage) {
+      <img [src]="pages[currentIndex - 1].src" alt="" fetchpriority="low" />
+    }
   </div>
-</section>
+</div>
