@@ -1,30 +1,392 @@
-import { Component } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  HostListener,
+  inject,
+  ChangeDetectorRef,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { comicPages, comicActs, ComicPageItem, ComicActInfo } from '@/data/comicManifest';
 
 @Component({
   selector: 'app-comic-reader',
   standalone: true,
-  imports: [CommonModule],
-  template: `
-    <div class="flex flex-col items-center justify-center p-8 text-center min-h-[60vh]">
-      <div class="rounded-xl bg-slate-900 border border-slate-800 p-8 shadow-2xl max-w-lg">
-        <div class="flex items-center justify-center gap-2 text-sky-400 mb-3">
-          <span class="text-2xl font-black">⚡</span>
-          <h2 class="text-2xl font-bold text-white">DJayJesse-Art Comic Reader</h2>
-        </div>
-        <p class="text-slate-400 text-sm leading-relaxed mb-4">
-          Angular standalone scaffolding initialized with Angular Router and Tailwind CSS. Ready to
-          showcase 313 comic pages across Acts 1 through 5.
-        </p>
-        <div
-          class="inline-flex items-center px-3 py-1 rounded-full bg-sky-950 text-sky-400 border border-sky-800 text-xs font-semibold"
-        >
-          Milestone 1 Ready &bull; Awaiting M2 Reader Component Implementation
-        </div>
-      </div>
-    </div>
-  `,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './comic-reader.component.html',
 })
-export class ComicReaderComponent {
-  readonly totalPages = 313;
+export class ComicReaderComponent implements OnInit, OnDestroy {
+  // Dependencies (optional injection ensures zero breakage in headless unit tests)
+  private readonly router = inject(Router, { optional: true });
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly cdr = inject(ChangeDetectorRef, { optional: true });
+  private readonly destroy$ = new Subject<void>();
+
+  // Catalog Data
+  readonly pages: ComicPageItem[] = comicPages;
+  readonly acts: ComicActInfo[] = comicActs;
+  readonly totalPages: number = comicPages.length;
+
+  // Active Reader State
+  currentIndex = 0;
+  imageLoaded = false;
+  imageError = false;
+
+  // -------------------------------------------------------------
+  // Derived Reactive Properties (O(1) Getters)
+  // -------------------------------------------------------------
+
+  get currentPage(): ComicPageItem {
+    return this.pages[this.currentIndex] ?? this.pages[0];
+  }
+
+  get currentAct(): ComicActInfo {
+    const actNum = this.currentPage?.act ?? 1;
+    return this.acts[actNum - 1] ?? this.acts[0];
+  }
+
+  get isFirstPage(): boolean {
+    return this.currentIndex <= 0;
+  }
+
+  get isLastPage(): boolean {
+    return this.currentIndex >= this.totalPages - 1;
+  }
+
+  get hasPreviousPage(): boolean {
+    return !this.isFirstPage;
+  }
+
+  get hasNextPage(): boolean {
+    return !this.isLastPage;
+  }
+
+  get humanPageNumber(): number {
+    return this.currentIndex + 1;
+  }
+
+  get progressLabel(): string {
+    return `Page ${this.humanPageNumber} of ${this.totalPages}`;
+  }
+
+  get actProgressLabel(): string {
+    const act = this.currentAct;
+    const pageInAct = this.currentPage.actIndex + 1;
+    return `${act.title} • Page ${pageInAct} of ${act.pageCount}`;
+  }
+
+  get progressPercentage(): number {
+    return Math.round((this.humanPageNumber / this.totalPages) * 100);
+  }
+
+  // Two-way dropdown binding helpers
+  get selectedPageIndex(): number {
+    return this.currentIndex;
+  }
+  set selectedPageIndex(val: number | string) {
+    const num = typeof val === 'number' ? val : parseInt(String(val), 10);
+    if (!isNaN(num)) {
+      this.jumpToPage(num);
+    }
+  }
+
+  get selectedAct(): number {
+    return this.currentPage.act;
+  }
+  set selectedAct(val: number | string) {
+    const num = typeof val === 'number' ? val : parseInt(String(val), 10);
+    if (!isNaN(num)) {
+      this.jumpToAct(num);
+    }
+  }
+
+  // -------------------------------------------------------------
+  // Lifecycle
+  // -------------------------------------------------------------
+
+  ngOnInit(): void {
+    if (this.route) {
+      this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+        const pageParam = params.get('page');
+        const actParam = params.get('act');
+
+        if (pageParam !== null) {
+          const resolvedIndex = this.resolvePageIndexFromParam(pageParam);
+          if (resolvedIndex !== null && resolvedIndex !== this.currentIndex) {
+            this.setPageIndex(resolvedIndex, false);
+          }
+        } else if (actParam !== null) {
+          const actNum = parseInt(actParam, 10);
+          if (!isNaN(actNum) && actNum >= 1 && actNum <= 5) {
+            const act = this.acts.find((a) => a.act === actNum);
+            if (act && act.startGlobalIndex !== this.currentIndex) {
+              this.setPageIndex(act.startGlobalIndex, false);
+            }
+          }
+        }
+      });
+    }
+
+    this.preloadAdjacentPages();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // -------------------------------------------------------------
+  // Navigation Operations
+  // -------------------------------------------------------------
+
+  nextPage(): void {
+    if (this.isLastPage) return;
+    this.setPageIndex(this.currentIndex + 1, true);
+  }
+
+  previousPage(): void {
+    if (this.isFirstPage) return;
+    this.setPageIndex(this.currentIndex - 1, true);
+  }
+
+  jumpToPage(index: number | string): void {
+    const numericIndex = typeof index === 'number' ? index : parseInt(String(index), 10);
+    if (isNaN(numericIndex)) return;
+    const intIndex = Math.floor(numericIndex);
+    if (intIndex < 0 || intIndex >= this.totalPages) {
+      return; // Ignore out-of-bounds indices
+    }
+    if (intIndex === this.currentIndex) return;
+    this.setPageIndex(intIndex, true);
+  }
+
+  jumpToAct(actNumber: number | string): void {
+    const actNum = typeof actNumber === 'number' ? actNumber : parseInt(String(actNumber), 10);
+    if (isNaN(actNum)) return;
+    const targetAct = this.acts.find((a) => a.act === actNum);
+    if (targetAct) {
+      this.jumpToPage(targetAct.startGlobalIndex);
+    }
+  }
+
+  firstPage(): void {
+    this.jumpToPage(0);
+  }
+
+  lastPage(): void {
+    this.jumpToPage(this.totalPages - 1);
+  }
+
+  jumpToPageByFilename(filename: string): boolean {
+    const normalized = filename.trim().toLowerCase();
+    const target = this.pages.find(
+      (p) =>
+        p.filename.toLowerCase() === normalized || p.filename.toLowerCase() === `${normalized}.png`
+    );
+    if (target) {
+      this.jumpToPage(target.globalIndex);
+      return true;
+    }
+    return false;
+  }
+
+  jumpToPageById(pageId: string): boolean {
+    const target = this.pages.find((p) => p.id === pageId.trim().toLowerCase());
+    if (target) {
+      this.jumpToPage(target.globalIndex);
+      return true;
+    }
+    return false;
+  }
+
+  // Select dropdown event handlers
+  onActSelect(event: Event): void {
+    const target = event.target as HTMLSelectElement | null;
+    if (target?.value) {
+      this.jumpToAct(target.value);
+    }
+  }
+
+  onPageSelect(event: Event): void {
+    const target = event.target as HTMLSelectElement | null;
+    if (target?.value) {
+      this.jumpToPage(target.value);
+    }
+  }
+
+  // Image loading events
+  onImageLoad(): void {
+    this.imageLoaded = true;
+    this.imageError = false;
+    this.cdr?.markForCheck();
+  }
+
+  onImageError(): void {
+    this.imageLoaded = false;
+    this.imageError = true;
+    this.cdr?.markForCheck();
+  }
+
+  // -------------------------------------------------------------
+  // Keyboard Navigation with Focus Guard
+  // -------------------------------------------------------------
+
+  @HostListener('window:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent): void {
+    // Ignore modifier combinations (Ctrl, Alt, Meta)
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+
+    // Suppress when typing in form controls or editable areas
+    if (this.isFocusInEditableOrFormElement(event)) {
+      return;
+    }
+
+    const key = event.key;
+    const code = event.code;
+
+    if (key === 'ArrowRight' || key === 'Right' || code === 'ArrowRight') {
+      if (typeof event.preventDefault === 'function') {
+        event.preventDefault();
+      }
+      this.nextPage();
+    } else if (key === 'ArrowLeft' || key === 'Left' || code === 'ArrowLeft') {
+      if (typeof event.preventDefault === 'function') {
+        event.preventDefault();
+      }
+      this.previousPage();
+    }
+  }
+
+  public isFocusInEditableOrFormElement(event?: KeyboardEvent): boolean {
+    const isControl = (el: Element | null): boolean => {
+      if (!el || !(el instanceof HTMLElement)) return false;
+      const tag = el.tagName.toUpperCase();
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') {
+        return true;
+      }
+      const ceProp = el.contentEditable;
+      const ceAttr = el.getAttribute('contenteditable');
+      if (
+        el.isContentEditable ||
+        ceProp === 'true' ||
+        ceProp === '' ||
+        ceAttr === 'true' ||
+        ceAttr === '' ||
+        el.getAttribute('role') === 'textbox' ||
+        Boolean(el.closest?.('[contenteditable="true"], [contenteditable=""]'))
+      ) {
+        return true;
+      }
+      return false;
+    };
+
+    if (event && isControl(event.target as Element)) {
+      return true;
+    }
+
+    if (typeof document !== 'undefined' && isControl(document.activeElement)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // -------------------------------------------------------------
+  // Internal State Helpers & Preloading
+  // -------------------------------------------------------------
+
+  private setPageIndex(newIndex: number, syncRouter: boolean): void {
+    if (newIndex === this.currentIndex) return;
+    this.currentIndex = newIndex;
+    this.imageLoaded = false;
+    this.imageError = false;
+
+    if (syncRouter) {
+      this.syncUrlWithCurrentPage();
+    }
+    this.preloadAdjacentPages();
+    this.cdr?.markForCheck();
+  }
+
+  private syncUrlWithCurrentPage(): void {
+    if (!this.router || !this.route) return;
+
+    const targetPageNum = this.humanPageNumber;
+    const currentParam = this.route.snapshot?.queryParamMap?.get('page');
+    if (currentParam !== String(targetPageNum)) {
+      this.router
+        .navigate([], {
+          relativeTo: this.route,
+          queryParams: { page: targetPageNum },
+          queryParamsHandling: 'merge',
+          replaceUrl: true,
+        })
+        .catch(() => {
+          // Gracefully suppress rejection in test or detached navigation
+        });
+    }
+  }
+
+  public resolvePageIndexFromParam(param: string): number | null {
+    if (!param) return null;
+    const trimmed = param.trim();
+
+    // 1-based numeric page index
+    const num = parseInt(trimmed, 10);
+    if (!isNaN(num) && /^\d+$/.test(trimmed)) {
+      if (num >= 1 && num <= this.totalPages) {
+        return num - 1;
+      }
+      if (num <= 0) return 0;
+      if (num > this.totalPages) return this.totalPages - 1;
+    }
+
+    // Filename lookup (e.g., Act1.11b or Act1.11b.png)
+    const normalized = trimmed.toLowerCase();
+    const byFilename = this.pages.findIndex(
+      (p) =>
+        p.filename.toLowerCase() === normalized || p.filename.toLowerCase() === `${normalized}.png`
+    );
+    if (byFilename !== -1) {
+      return byFilename;
+    }
+
+    // ID lookup (e.g., act-1-page-11b)
+    const byId = this.pages.findIndex((p) => p.id.toLowerCase() === normalized);
+    if (byId !== -1) {
+      return byId;
+    }
+
+    return null;
+  }
+
+  private preloadAdjacentPages(): void {
+    if (typeof window === 'undefined') return;
+
+    const toPreload: string[] = [];
+    if (this.currentIndex + 1 < this.totalPages) {
+      toPreload.push(this.pages[this.currentIndex + 1].src);
+    }
+    if (this.currentIndex + 2 < this.totalPages) {
+      toPreload.push(this.pages[this.currentIndex + 2].src);
+    }
+    if (this.currentIndex - 1 >= 0) {
+      toPreload.push(this.pages[this.currentIndex - 1].src);
+    }
+
+    for (const src of toPreload) {
+      try {
+        const img = new Image();
+        img.src = src;
+      } catch {
+        // Ignore image instantiation issues in headless or mock DOM
+      }
+    }
+  }
 }
