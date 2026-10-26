@@ -1,0 +1,8 @@
+dist
+coverage
+node_modules
+public/comic-pages
+.agents
+.husky/_
+ORIGINAL_REQUEST.md
+*.tsbuildinfo

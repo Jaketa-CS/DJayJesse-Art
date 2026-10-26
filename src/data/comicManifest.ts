@@ -1,4 +1,4 @@
-import { parseComicPageKey, sortComicFilenames } from '../utils/naturalSort';
+import { parseComicPageKey, sortComicFilenames } from '@/utils/naturalSort';
 
 export interface ComicPageItem {
   id: string;

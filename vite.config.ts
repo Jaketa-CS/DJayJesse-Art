@@ -1,40 +1,41 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
-import tailwindcss from 'tailwindcss';
-import autoprefixer from 'autoprefixer';
+import { defineConfig, type UserConfig } from 'vite';
+import type { InlineConfig } from 'vitest/node';
+import angular from '@analogjs/vite-plugin-angular';
+import path from 'node:path';
+
+interface VitestConfigExport extends UserConfig {
+  test?: InlineConfig;
+}
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    angular({
+      tsconfig: path.resolve(__dirname, './tsconfig.json'),
+    }),
+  ],
+  server: {
+    port: 5173,
+    host: true,
+  },
+  preview: {
+    port: 5173,
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
-  css: {
-    postcss: {
-      plugins: [
-        tailwindcss({
-          content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
-          darkMode: 'class',
-          theme: {
-            extend: {},
-          },
-          plugins: [],
-        }),
-        autoprefixer(),
-      ],
-    },
-  },
-  // @ts-expect-error vitest config extension
   test: {
     globals: true,
-    environment: 'happy-dom',
+    environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.{test,spec}.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
       reportsDirectory: './coverage',
+      include: ['src/**/*.ts'],
+      exclude: ['src/main.ts', 'src/test/**', '**/*.d.ts'],
     },
   },
-});
+} as VitestConfigExport);
