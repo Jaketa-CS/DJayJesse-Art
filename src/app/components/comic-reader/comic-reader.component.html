@@ -1,7 +1,6 @@
 <section
   class="flex flex-col flex-1 items-center justify-center w-full px-4 py-4 gap-4 select-none"
   data-testid="comic-reader-container"
-  role="region"
   aria-label="Comic Storyboard Reader"
 >
   <!-- 1. Comic Image Centered in the Middle -->
@@ -13,6 +12,7 @@
       [src]="currentPage.src"
       [alt]="currentPage.pageLabel"
       (click)="nextPage()"
+      (keydown)="$event.key === 'Enter' && nextPage()"
       (load)="onImageLoad()"
       (error)="onImageError()"
       class="max-h-[75vh] w-auto max-w-full object-contain block mx-auto transition-opacity duration-150"
