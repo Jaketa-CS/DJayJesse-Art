@@ -181,6 +181,16 @@ describe('ComicReaderComponent', () => {
       expect(overlayPrev).toBeNull();
       expect(overlayNext).toBeNull();
     });
+
+    it('should advance to the next page when the comic image itself is clicked', () => {
+      const img = getImage();
+      img.click();
+      fixture.detectChanges();
+
+      expect(component.currentIndex).toBe(1);
+      expect(component.currentPage.filename).toBe('Act1.2.png');
+      expect(getImage().getAttribute('src')).toBe('/comic-pages/Act1.2.png');
+    });
   });
 
   // ==========================================
