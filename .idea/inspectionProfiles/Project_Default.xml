@@ -2,5 +2,29 @@
   <profile version="1.0">
     <option name="myName" value="Project Default" />
     <inspection_tool class="Eslint" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="HtmlUnknownTag" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="myCustomValues">
+        <custom-tag value="app-root" />
+      </option>
+      <option name="myValues">
+        <value value="app-root" />
+      </option>
+    </inspection_tool>
+    <inspection_tool class="HtmlUnknownAttribute" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="myCustomValues">
+        <custom-attribute value="[src]" />
+        <custom-attribute value="(load)" />
+        <custom-attribute value="(error)" />
+        <custom-attribute value="(click)" />
+        <custom-attribute value="[disabled]" />
+      </option>
+      <option name="myValues">
+        <value value="[src]" />
+        <value value="(load)" />
+        <value value="(error)" />
+        <value value="(click)" />
+        <value value="[disabled]" />
+      </option>
+    </inspection_tool>
   </profile>
 </component>

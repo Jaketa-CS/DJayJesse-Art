@@ -25,7 +25,7 @@
     @if (!imageLoaded && !imageError) {
       <div
         data-testid="image-loading-indicator"
-        class="absolute text-neutral-400 text-sm font-medium tracking-wide"
+        class="absolute text-neutral-300 text-sm font-medium tracking-wide"
         aria-live="polite"
       >
         Loading...
@@ -38,7 +38,7 @@
         data-testid="image-error-fallback"
         class="absolute text-center text-neutral-400 text-sm p-4 bg-neutral-900 border border-neutral-800 rounded"
       >
-        <p class="font-semibold text-neutral-200">Unable to load comic page</p>
+        <p class="font-semibold text-neutral-200">Unable to load</p>
         <p class="text-xs text-neutral-500 font-mono mt-1">{{ currentPage.filename }}</p>
         <button
           type="button"
@@ -70,10 +70,10 @@
     <!-- Simple Page Indicator -->
     <div
       data-testid="page-indicator"
-      class="flex items-center gap-2 text-neutral-300 text-xs sm:text-sm"
+      class="flex items-center gap-2 text-neutral-200 text-xs sm:text-sm font-medium"
     >
       <span data-testid="page-label">{{ currentPage.pageLabel }}</span>
-      <span class="text-neutral-600">•</span>
+      <span class="text-neutral-500">•</span>
       <span data-testid="progress-text" class="text-neutral-400">{{ progressLabel }}</span>
     </div>
 
@@ -99,7 +99,7 @@
         data-testid="act-select"
         class="bg-neutral-900 border border-neutral-800 text-neutral-300 text-xs rounded px-2 py-1.5 focus:outline-none focus:border-neutral-600 transition-colors cursor-pointer"
       >
-        @for (act of acts; track act.Act) {
+        @for (act of acts; track act.act) {
           <option value="{{ act.act }}">Act {{ act.act }}</option>
         }
       </select>

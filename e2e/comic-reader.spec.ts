@@ -38,7 +38,7 @@ test.describe('DJayJesse-Art Comic Reader E2E Suite', () => {
       await expect(page.locator('html')).toHaveClass(/dark/);
 
       // Verify header branding
-      const headerTitle = page.getByRole('heading', { name: /^DJayJesse$/ });
+      const headerTitle = page.getByRole('heading', { name: /^Hilmi & Seven$/ });
       await expect(headerTitle).toBeVisible();
 
       // Verify computed background color on body is dark (black / neutral-950)
