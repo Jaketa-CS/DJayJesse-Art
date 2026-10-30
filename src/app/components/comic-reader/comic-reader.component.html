@@ -99,7 +99,7 @@
         data-testid="act-select"
         class="bg-neutral-900 border border-neutral-800 text-neutral-300 text-xs rounded px-2 py-1.5 focus:outline-none focus:border-neutral-600 transition-colors cursor-pointer"
       >
-        @for (act of acts; track act.act) {
+        @for (act of acts; track act.Act) {
           <option value="{{ act.act }}">Act {{ act.act }}</option>
         }
       </select>
@@ -119,7 +119,7 @@
     </div>
   </div>
 
-  <!-- 3. Hidden Image Preloader Container -->
+  <!-- 3. Hidden Image Container (preloads images) -->
   <div class="hidden" aria-hidden="true" style="display: none">
     @if (hasNextPage) {
       <img [src]="pages[currentIndex + 1].src" alt="" fetchpriority="low" />
