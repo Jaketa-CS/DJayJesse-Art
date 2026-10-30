@@ -39,7 +39,7 @@
         class="absolute text-center text-neutral-400 text-sm p-4 bg-neutral-900 border border-neutral-800 rounded"
       >
         <p class="font-semibold text-neutral-200">Unable to load</p>
-        <p class="text-xs text-neutral-500 font-mono mt-1">{{ currentPage.filename }}</p>
+        <p class="text-xs text-neutral-500 mt-1">{{ currentPage.filename }}</p>
         <button
           type="button"
           (click)="onImageLoad()"
@@ -63,7 +63,7 @@
       [disabled]="isFirstPage"
       class="px-3 py-1.5 rounded bg-neutral-900 hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed text-white border border-neutral-800 transition-colors cursor-pointer"
     >
-      <span aria-hidden="true">←</span>
+      <span class="font-sans" aria-hidden="true">←</span>
       <span class="sr-only">Previous Page</span>
     </button>
 
@@ -86,7 +86,7 @@
       [disabled]="isLastPage"
       class="px-3 py-1.5 rounded bg-neutral-900 hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed text-white border border-neutral-800 transition-colors cursor-pointer"
     >
-      <span aria-hidden="true">→</span>
+      <span class="font-sans" aria-hidden="true">→</span>
       <span class="sr-only">Next Page</span>
     </button>
 
