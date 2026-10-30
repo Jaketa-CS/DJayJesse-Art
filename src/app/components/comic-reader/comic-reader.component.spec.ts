@@ -34,12 +34,8 @@ describe('ComicReaderComponent', () => {
   const getActSelect = (): HTMLSelectElement =>
     compiled.querySelector('[data-testid="act-select"]') as HTMLSelectElement;
 
-  const getPageSelect = (): HTMLSelectElement =>
-    compiled.querySelector('[data-testid="page-select"]') as HTMLSelectElement;
-
-  const getIndicator = (): HTMLElement =>
-    (compiled.querySelector('[data-testid="page-indicator"]') ||
-      compiled.querySelector('[data-testid="progress-text"]')) as HTMLElement;
+  const getPageSelect = (): HTMLButtonElement =>
+    compiled.querySelector('[data-testid="page-select"]') as HTMLButtonElement;
 
   const getProgressBar = (): HTMLElement | null =>
     compiled.querySelector('[data-testid="progress-bar"]');
@@ -113,11 +109,9 @@ describe('ComicReaderComponent', () => {
       expect(nextBtn).toBeTruthy();
       expect(nextBtn.disabled).toBe(false);
 
-      const indicator = getIndicator();
-      expect(indicator).toBeTruthy();
-      expect(indicator.textContent).toContain('Page 1');
-      expect(indicator.textContent).not.toContain('Act');
-      expect(indicator.textContent).toContain('313');
+      const pageSelect = getPageSelect();
+      expect(pageSelect).toBeTruthy();
+      expect(pageSelect.textContent).toContain('Page 1 of 313');
 
       const progressBar = getProgressBar();
       expect(progressBar).toBeNull();
@@ -411,7 +405,7 @@ describe('ComicReaderComponent', () => {
       input.remove();
     });
 
-    it('should suppress arrow navigation when a select element has focus', () => {
+    it('should suppress arrow navigation when the page picker has focus', () => {
       component.jumpToPage(5);
       fixture.detectChanges();
 
@@ -543,8 +537,11 @@ describe('ComicReaderComponent', () => {
     it('should display only a page selector with continuous page numbers', () => {
       expect(getActSelect()).toBeNull();
       const pageSelect = getPageSelect();
-      expect(pageSelect.options[0].textContent?.trim()).toBe('Page 1');
-      expect(pageSelect.options[67].textContent?.trim()).toBe('Page 68');
+      pageSelect.click();
+      fixture.detectChanges();
+      const pageOptions = compiled.querySelectorAll('[role="option"]');
+      expect(pageOptions[0].textContent?.trim()).toBe('Page 1 of 313');
+      expect(pageOptions[67].textContent?.trim()).toBe('Page 68 of 313');
     });
 
     it('should ignore invalid act numbers in jumpToAct', () => {
@@ -572,7 +569,7 @@ describe('ComicReaderComponent', () => {
       expect(component.currentPage.pageNum).toBe(11);
       expect(component.currentPage.subPage).toBe('b');
       expect(getImage().getAttribute('src')).toBe('/comic-pages/Act1.11b.png');
-      expect(getIndicator().textContent).toContain('11b');
+      expect(getPageSelect().textContent).toContain('Page 12 of 313');
     });
 
     it('should navigate sequentially through Act 1 sub-page sequence (Act1.11 -> Act1.11b -> Act1.12)', () => {
@@ -643,10 +640,12 @@ describe('ComicReaderComponent', () => {
       expect(component.currentPage.filename).toBe('Act4.11.png');
     });
 
-    it('should update component when Page select dropdown changes via DOM event', () => {
+    it('should update component when a page menu option is chosen', () => {
       const pageSelect = getPageSelect();
-      pageSelect.value = '11';
-      pageSelect.dispatchEvent(new Event('change'));
+      pageSelect.click();
+      fixture.detectChanges();
+      const pageOption = compiled.querySelectorAll<HTMLButtonElement>('[role="option"]')[11];
+      pageOption.click();
       fixture.detectChanges();
 
       expect(component.currentIndex).toBe(11);

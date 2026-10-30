@@ -1,6 +1,4 @@
 import {
-  AfterViewChecked,
-  AfterViewInit,
   ChangeDetectorRef,
   Component,
   ElementRef,
@@ -9,7 +7,7 @@ import {
   OnDestroy,
   OnInit,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
@@ -19,10 +17,10 @@ import { ComicActInfo, comicActs, ComicPageItem, comicPages } from '@/data/comic
 @Component({
   selector: 'app-comic-reader',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NgOptimizedImage],
   templateUrl: './comic-reader.component.html',
 })
-export class ComicReaderComponent implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy {
+export class ComicReaderComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router, { optional: true });
   private readonly route = inject(ActivatedRoute, { optional: true });
   private readonly cdr = inject(ChangeDetectorRef, { optional: true });
@@ -38,6 +36,7 @@ export class ComicReaderComponent implements OnInit, AfterViewInit, AfterViewChe
   currentIndex = 0;
   imageLoaded = false;
   imageError = false;
+  pageMenuOpen = false;
 
   // -------------------------------------------------------------
   // Derived Reactive Properties (O(1) Getters)
@@ -137,22 +136,6 @@ export class ComicReaderComponent implements OnInit, AfterViewInit, AfterViewChe
     this.preloadAdjacentPages();
   }
 
-  ngAfterViewInit(): void {
-    const host = this.elRef?.nativeElement;
-    if (!host) return;
-
-    const pageSelect = host.querySelector<HTMLSelectElement>('#page-select');
-    if (pageSelect) {
-      pageSelect.addEventListener('change', (e) => this.onPageSelect(e));
-    }
-
-    this.syncSelectValues();
-  }
-
-  ngAfterViewChecked(): void {
-    this.syncSelectValues();
-  }
-
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
@@ -223,12 +206,9 @@ export class ComicReaderComponent implements OnInit, AfterViewInit, AfterViewChe
     return false;
   }
 
-  // Select dropdown event handlers
-  onPageSelect(event: Event): void {
-    const target = event.target as HTMLSelectElement | null;
-    if (target?.value) {
-      this.jumpToPage(target.value);
-    }
+  selectPageFromMenu(index: number): void {
+    this.jumpToPage(index);
+    this.pageMenuOpen = false;
   }
 
   // Image loading events
@@ -253,6 +233,15 @@ export class ComicReaderComponent implements OnInit, AfterViewInit, AfterViewChe
     const target = event.target as HTMLElement | null;
     if (target?.id === 'comic-page-image' || target?.dataset['testid'] === 'comic-image') {
       this.nextPage();
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as Node | null;
+    if (this.pageMenuOpen && target && !this.elRef?.nativeElement.contains(target)) {
+      this.pageMenuOpen = false;
+      this.cdr?.markForCheck();
     }
   }
 
@@ -300,6 +289,7 @@ export class ComicReaderComponent implements OnInit, AfterViewInit, AfterViewChe
         ceAttr === 'true' ||
         ceAttr === '' ||
         el.getAttribute('role') === 'textbox' ||
+        el.getAttribute('role') === 'combobox' ||
         Boolean(el.closest?.('[contenteditable="true"], [contenteditable=""]'))
       );
     };
@@ -323,20 +313,8 @@ export class ComicReaderComponent implements OnInit, AfterViewInit, AfterViewChe
     if (syncRouter) {
       this.syncUrlWithCurrentPage();
     }
-    this.syncSelectValues();
     this.preloadAdjacentPages();
     this.cdr?.markForCheck();
-  }
-
-  private syncSelectValues(): void {
-    const host = this.elRef?.nativeElement;
-    if (!host) return;
-
-    const pageSelect = host.querySelector<HTMLSelectElement>('#page-select');
-    const pageValue = String(this.currentIndex);
-    if (pageSelect && pageSelect.value !== pageValue) {
-      pageSelect.value = pageValue;
-    }
   }
 
   private syncUrlWithCurrentPage(): void {
