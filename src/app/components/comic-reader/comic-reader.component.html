@@ -3,7 +3,7 @@
   data-testid="comic-reader-container"
 >
   <!-- 1. Comic Image Centered in the Middle -->
-  <div class="relative flex items-center justify-center w-full max-w-5xl">
+  <div class="relative flex items-center justify-center w-full max-w-7xl">
     <img
       id="comic-page-image"
       data-testid="comic-image"
@@ -12,7 +12,7 @@
       alt="{{ currentPage.pageLabel }}"
       (load)="onImageLoad()"
       (error)="onImageError()"
-      class="max-h-[75vh] w-auto max-w-full object-contain block mx-auto transition-opacity duration-150 {{
+      class="max-h-[80vh] w-auto max-w-full object-contain block mx-auto transition-opacity duration-150 {{
         !isLastPage ? 'cursor-pointer' : ''
       }} {{ !imageLoaded && !imageError ? 'opacity-0' : '' }} {{
         imageLoaded ? 'opacity-100' : ''
@@ -52,7 +52,7 @@
   </div>
 
   <!-- 2. Centered Directly Below Comic: Left (←) and Right (→) Arrows, Indicator, and Jump Selects -->
-  <div class="flex flex-wrap items-center justify-center gap-3 text-sm">
+  <div class="flex flex-wrap items-center justify-center gap-3 text-base">
     <!-- Previous Button (←) -->
     <button
       type="button"
@@ -61,7 +61,7 @@
       data-test="prev-page-btn"
       (click)="previousPage()"
       [disabled]="isFirstPage"
-      class="px-3 py-1.5 rounded bg-neutral-900 hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed text-white border border-neutral-800 transition-colors cursor-pointer"
+      class="inline-flex h-11 w-11 items-center justify-center rounded bg-neutral-900 text-2xl text-white border border-neutral-800 hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
     >
       <span class="font-sans" aria-hidden="true">←</span>
       <span class="sr-only">Previous Page</span>
@@ -70,7 +70,7 @@
     <!-- Simple Page Indicator -->
     <div
       data-testid="page-indicator"
-      class="flex items-center gap-2 text-neutral-200 text-xs sm:text-sm font-medium"
+      class="flex items-center gap-2 text-neutral-200 text-sm sm:text-base font-medium"
     >
       <span data-testid="page-label">{{ currentPage.pageLabel }}</span>
       <span data-testid="progress-text" class="text-neutral-400">of {{ totalPages }}</span>
@@ -84,7 +84,7 @@
       data-test="next-page-btn"
       (click)="nextPage()"
       [disabled]="isLastPage"
-      class="px-3 py-1.5 rounded bg-neutral-900 hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed text-white border border-neutral-800 transition-colors cursor-pointer"
+      class="inline-flex h-11 w-11 items-center justify-center rounded bg-neutral-900 text-2xl text-white border border-neutral-800 hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
     >
       <span class="font-sans" aria-hidden="true">→</span>
       <span class="sr-only">Next Page</span>
@@ -96,7 +96,7 @@
       <select
         id="page-select"
         data-testid="page-select"
-        class="bg-neutral-900 border border-neutral-800 text-neutral-300 text-xs rounded px-2 py-1.5 focus:outline-none focus:border-neutral-600 transition-colors cursor-pointer max-w-[130px] truncate"
+        class="bg-neutral-900 border border-neutral-800 text-neutral-300 text-sm sm:text-base rounded px-3 py-2 focus:outline-none focus:border-neutral-600 transition-colors cursor-pointer max-w-[190px] truncate"
       >
         @for (p of pages; track p.id; let i = $index) {
           <option value="{{ i }}">

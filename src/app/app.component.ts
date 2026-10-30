@@ -7,10 +7,6 @@ import { RouterOutlet } from '@angular/router';
   imports: [RouterOutlet],
   template: `
     <div class="min-h-screen bg-[#383838] text-white flex flex-col">
-      <header class="py-4 text-center">
-        <h1 class="text-xl sm:text-2xl font-medium tracking-tight text-white">{{ title }}</h1>
-      </header>
-
       <main class="flex-1 flex flex-col">
         <router-outlet></router-outlet>
       </main>
