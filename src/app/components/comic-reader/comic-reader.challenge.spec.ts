@@ -536,7 +536,7 @@ describe('Milestone 2 Adversarial Challenge — ComicReaderComponent', () => {
       expect(component.currentPage.act).toBe(4);
       expect(component.currentPage.pageNum).toBe(10);
       expect(component.currentPage.subPage).toBe('a');
-      expect(component.currentPage.pageLabel).toBe('Act 4, Page 10a');
+      expect(component.currentPage.pageLabel).toBe('Page 198');
 
       // Step forward -> Act4.10b (index 198)
       component.nextPage();
@@ -547,7 +547,7 @@ describe('Milestone 2 Adversarial Challenge — ComicReaderComponent', () => {
       expect(component.currentPage.act).toBe(4);
       expect(component.currentPage.pageNum).toBe(10);
       expect(component.currentPage.subPage).toBe('b');
-      expect(component.currentPage.pageLabel).toBe('Act 4, Page 10b');
+      expect(component.currentPage.pageLabel).toBe('Page 199');
 
       // Step forward -> Act4.11 (index 199)
       component.nextPage();
@@ -558,7 +558,7 @@ describe('Milestone 2 Adversarial Challenge — ComicReaderComponent', () => {
       expect(component.currentPage.act).toBe(4);
       expect(component.currentPage.pageNum).toBe(11);
       expect(component.currentPage.subPage).toBe('');
-      expect(component.currentPage.pageLabel).toBe('Act 4, Page 11');
+      expect(component.currentPage.pageLabel).toBe('Page 200');
 
       // Step backward sequence: 199 -> 198 -> 197 -> 196
       component.previousPage();

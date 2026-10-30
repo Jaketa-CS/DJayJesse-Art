@@ -22,10 +22,11 @@ describe('AppComponent', () => {
     expect(app.title).toEqual('Himli & Seven');
   });
 
-  it('should render branding header with title', () => {
+  it('should render the application layout', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('header')?.textContent).toContain('Himli & Seven');
+    expect(compiled.querySelector('main')).toBeTruthy();
+    expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
 });

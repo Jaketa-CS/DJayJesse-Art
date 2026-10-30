@@ -652,6 +652,22 @@ describe('ComicReaderComponent', () => {
       expect(component.currentPage.filename).toBe('Act1.11b.png');
       expect(getImage().getAttribute('src')).toBe('/comic-pages/Act1.11b.png');
     });
+
+    it('should close the page menu when clicking outside the reader', () => {
+      getPageSelect().click();
+      fixture.detectChanges();
+      expect(compiled.querySelector('[role="listbox"]')).toBeTruthy();
+
+      const outside = document.createElement('button');
+      outside.className = 'test-fixture-element';
+      document.body.appendChild(outside);
+      outside.click();
+      fixture.detectChanges();
+
+      expect(component.pageMenuOpen).toBe(false);
+      expect(compiled.querySelector('[role="listbox"]')).toBeNull();
+      outside.remove();
+    });
   });
 
   // ==========================================

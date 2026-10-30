@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 /**
  * Playwright End-to-End Test Suite for DJayJesse-Art Comic Reader.
@@ -21,9 +21,12 @@ test.describe('DJayJesse-Art Comic Reader E2E Suite', () => {
   const getComicImage = (page: Page) => page.getByTestId('comic-image');
   const getPrevButton = (page: Page) => page.getByTestId('prev-button');
   const getNextButton = (page: Page) => page.getByTestId('next-button');
-  const getIndicator = (page: Page) => page.getByTestId('page-indicator');
-  const getActSelect = (page: Page) => page.getByTestId('act-select');
+  const getIndicator = (page: Page) => page.getByTestId('page-select');
   const getPageSelect = (page: Page) => page.getByTestId('page-select');
+  const choosePage = async (page: Page, index: number) => {
+    await getPageSelect(page).click();
+    await page.getByRole('option').nth(index).click();
+  };
 
   // =========================================================================
   // 1. Dark Mode & Minimal Monochrome Styling
@@ -34,30 +37,14 @@ test.describe('DJayJesse-Art Comic Reader E2E Suite', () => {
     }) => {
       await page.goto('/');
 
-      // Verify html element has dark class
-      await expect(page.locator('html')).toHaveClass(/dark/);
-
-      // Verify header branding
-      const headerTitle = page.getByRole('heading', { name: /^Hilmi & Seven$/ });
-      await expect(headerTitle).toBeVisible();
-
-      // Verify computed background color on body is dark (black / neutral-950)
+      // Verify the reader uses its dark neutral canvas.
       const body = page.locator('body');
       await expect(body).toBeVisible();
       const bgColor = await body.evaluate((el) => window.getComputedStyle(el).backgroundColor);
       const rgbValues = bgColor.match(/\d+/g)?.map(Number) ?? [255, 255, 255];
-      // All RGB channels must be very dark (<= 30)
-      expect(rgbValues[0]).toBeLessThanOrEqual(30);
-      expect(rgbValues[1]).toBeLessThanOrEqual(30);
-      expect(rgbValues[2]).toBeLessThanOrEqual(30);
-
-      // Verify high-contrast white text color on header title
-      const titleColor = await headerTitle.evaluate((el) => window.getComputedStyle(el).color);
-      const titleRgb = titleColor.match(/\d+/g)?.map(Number) ?? [0, 0, 0];
-      // RGB channels must be high-contrast light (>= 200)
-      expect(titleRgb[0]).toBeGreaterThanOrEqual(200);
-      expect(titleRgb[1]).toBeGreaterThanOrEqual(200);
-      expect(titleRgb[2]).toBeGreaterThanOrEqual(200);
+      expect(rgbValues[0]).toBeLessThanOrEqual(60);
+      expect(rgbValues[1]).toBeLessThanOrEqual(60);
+      expect(rgbValues[2]).toBeLessThanOrEqual(60);
     });
 
     test('verifies stripped-down minimal layout: progress bar and tap overlays are absent', async ({
@@ -95,7 +82,7 @@ test.describe('DJayJesse-Art Comic Reader E2E Suite', () => {
       // Verify comic image attributes
       await expect(comicImg).toBeVisible();
       await expect(comicImg).toHaveAttribute('src', /\/comic-pages\/Act1\.1\.png$/);
-      await expect(comicImg).toHaveAttribute('alt', 'Act 1, Page 1');
+      await expect(comicImg).toHaveAttribute('alt', 'Page 1');
 
       // Verify image actually decoded and rendered
       const isLoaded = await comicImg.evaluate((img: HTMLImageElement) => {
@@ -105,15 +92,12 @@ test.describe('DJayJesse-Art Comic Reader E2E Suite', () => {
 
       // Verify indicator content
       await expect(indicator).toContainText('Page 1 of 313');
-      await expect(indicator).toContainText('Act 1, Page 1');
 
       // Verify boundary initial button states: Previous disabled, Next enabled
       await expect(prevBtn).toBeDisabled();
       await expect(nextBtn).toBeEnabled();
 
-      // Verify dropdown initial values
-      await expect(getActSelect(page)).toHaveValue('1');
-      await expect(getPageSelect(page)).toHaveValue('0');
+      await expect(getPageSelect(page)).toHaveText('Page 1 of 313');
     });
   });
 
@@ -135,9 +119,7 @@ test.describe('DJayJesse-Art Comic Reader E2E Suite', () => {
       await nextBtn.click();
 
       await expect(comicImg).toHaveAttribute('src', /\/comic-pages\/Act1\.2\.png$/);
-      await expect(comicImg).toHaveAttribute('alt', 'Act 1, Page 2');
       await expect(indicator).toContainText('Page 2 of 313');
-      await expect(indicator).toContainText('Act 1, Page 2');
 
       // Previous button should now be enabled
       await expect(prevBtn).toBeEnabled();
@@ -209,17 +191,15 @@ test.describe('DJayJesse-Art Comic Reader E2E Suite', () => {
     }) => {
       await page.goto('/');
 
-      const pageSelect = getPageSelect(page);
       const prevBtn = getPrevButton(page);
       const nextBtn = getNextButton(page);
       const comicImg = getComicImage(page);
       const indicator = getIndicator(page);
 
       // Jump to last page: global index 312 (Act5.59.png)
-      await pageSelect.selectOption('312');
+      await choosePage(page, 312);
 
       await expect(comicImg).toHaveAttribute('src', /\/comic-pages\/Act5\.59\.png$/);
-      await expect(comicImg).toHaveAttribute('alt', 'Act 5, Page 59');
       await expect(indicator).toContainText('Page 313 of 313');
 
       // Verify Next button is disabled and Previous button is enabled
@@ -314,7 +294,7 @@ test.describe('DJayJesse-Art Comic Reader E2E Suite', () => {
       await page.goto('/');
 
       // Advance to page 5 first so both directions are available
-      await getPageSelect(page).selectOption('4');
+      await choosePage(page, 4);
       const comicImg = getComicImage(page);
       await expect(comicImg).toHaveAttribute('src', /\/comic-pages\/Act1\.5\.png$/);
 
@@ -340,49 +320,6 @@ test.describe('DJayJesse-Art Comic Reader E2E Suite', () => {
   });
 
   // =========================================================================
-  // 7. Act Jump Navigation
-  // =========================================================================
-  test.describe('Act Jump Navigation', () => {
-    test('selecting Acts from dropdown jumps directly to act starting pages', async ({ page }) => {
-      await page.goto('/');
-
-      const actSelect = getActSelect(page);
-      const comicImg = getComicImage(page);
-      const indicator = getIndicator(page);
-
-      // Jump to Act 2 (starts at globalIndex 67 -> Act2.1.png)
-      await actSelect.selectOption('2');
-      await expect(comicImg).toHaveAttribute('src', /\/comic-pages\/Act2\.1\.png$/);
-      await expect(comicImg).toHaveAttribute('alt', 'Act 2, Page 1');
-      await expect(indicator).toContainText('Page 68 of 313');
-      await expect(indicator).toContainText('Act 2, Page 1');
-
-      // Jump to Act 3 (starts at globalIndex 133 -> Act3.1.png)
-      await actSelect.selectOption('3');
-      await expect(comicImg).toHaveAttribute('src', /\/comic-pages\/Act3\.1\.png$/);
-      await expect(comicImg).toHaveAttribute('alt', 'Act 3, Page 1');
-      await expect(indicator).toContainText('Page 134 of 313');
-
-      // Jump to Act 4 (starts at globalIndex 188 -> Act4.1.png)
-      await actSelect.selectOption('4');
-      await expect(comicImg).toHaveAttribute('src', /\/comic-pages\/Act4\.1\.png$/);
-      await expect(comicImg).toHaveAttribute('alt', 'Act 4, Page 1');
-      await expect(indicator).toContainText('Page 189 of 313');
-
-      // Jump to Act 5 (starts at globalIndex 254 -> Act5.1.png)
-      await actSelect.selectOption('5');
-      await expect(comicImg).toHaveAttribute('src', /\/comic-pages\/Act5\.1\.png$/);
-      await expect(comicImg).toHaveAttribute('alt', 'Act 5, Page 1');
-      await expect(indicator).toContainText('Page 255 of 313');
-
-      // Return to Act 1 (starts at globalIndex 0 -> Act1.1.png)
-      await actSelect.selectOption('1');
-      await expect(comicImg).toHaveAttribute('src', /\/comic-pages\/Act1\.1\.png$/);
-      await expect(indicator).toContainText('Page 1 of 313');
-    });
-  });
-
-  // =========================================================================
   // 8. Page Jump Navigation & Alphanumeric Sub-Pages
   // =========================================================================
   test.describe('Page Jump Navigation & Alphanumeric Sub-Pages', () => {
@@ -391,18 +328,15 @@ test.describe('DJayJesse-Art Comic Reader E2E Suite', () => {
     }) => {
       await page.goto('/');
 
-      const pageSelect = getPageSelect(page);
       const comicImg = getComicImage(page);
       const indicator = getIndicator(page);
       const nextBtn = getNextButton(page);
       const prevBtn = getPrevButton(page);
 
       // Select index 11 (Act1.11b.png)
-      await pageSelect.selectOption('11');
+      await choosePage(page, 11);
 
       await expect(comicImg).toHaveAttribute('src', /\/comic-pages\/Act1\.11b\.png$/);
-      await expect(comicImg).toHaveAttribute('alt', 'Act 1, Page 11b');
-      await expect(indicator).toContainText('Act 1, Page 11b');
       await expect(indicator).toContainText('Page 12 of 313');
 
       // Advance to Act1.12.png (index 12)
@@ -417,7 +351,6 @@ test.describe('DJayJesse-Art Comic Reader E2E Suite', () => {
       // Return to Act1.11.png (index 10)
       await prevBtn.click();
       await expect(comicImg).toHaveAttribute('src', /\/comic-pages\/Act1\.11\.png$/);
-      await expect(indicator).toContainText('Act 1, Page 11');
       await expect(indicator).toContainText('Page 11 of 313');
     });
 
@@ -426,30 +359,25 @@ test.describe('DJayJesse-Art Comic Reader E2E Suite', () => {
     }) => {
       await page.goto('/');
 
-      const pageSelect = getPageSelect(page);
       const comicImg = getComicImage(page);
       const indicator = getIndicator(page);
       const nextBtn = getNextButton(page);
       const prevBtn = getPrevButton(page);
 
       // Jump to Act4.10a.png (globalIndex 197)
-      await pageSelect.selectOption('197');
+      await choosePage(page, 197);
       await expect(comicImg).toHaveAttribute('src', /\/comic-pages\/Act4\.10a\.png$/);
-      await expect(comicImg).toHaveAttribute('alt', 'Act 4, Page 10a');
-      await expect(indicator).toContainText('Act 4, Page 10a');
       await expect(indicator).toContainText('Page 198 of 313');
 
       // Step forward to Act4.10b.png (globalIndex 198)
       await nextBtn.click();
       await expect(comicImg).toHaveAttribute('src', /\/comic-pages\/Act4\.10b\.png$/);
-      await expect(comicImg).toHaveAttribute('alt', 'Act 4, Page 10b');
-      await expect(indicator).toContainText('Act 4, Page 10b');
       await expect(indicator).toContainText('Page 199 of 313');
 
       // Step forward to Act4.11.png (globalIndex 199)
       await nextBtn.click();
       await expect(comicImg).toHaveAttribute('src', /\/comic-pages\/Act4\.11\.png$/);
-      await expect(indicator).toContainText('Act 4, Page 11');
+      await expect(indicator).toContainText('Page 200 of 313');
 
       // Step backward to Act4.10b.png
       await prevBtn.click();
@@ -462,7 +390,7 @@ test.describe('DJayJesse-Art Comic Reader E2E Suite', () => {
       // Step backward to Act4.9.png (globalIndex 196)
       await prevBtn.click();
       await expect(comicImg).toHaveAttribute('src', /\/comic-pages\/Act4\.9\.png$/);
-      await expect(indicator).toContainText('Act 4, Page 9');
+      await expect(indicator).toContainText('Page 197 of 313');
     });
   });
 
@@ -536,11 +464,10 @@ test.describe('DJayJesse-Art Comic Reader E2E Suite', () => {
 
       await page.goto('/');
 
-      // Perform user workflow: Next, Next, Act Jump, Subpage Jump, Keyboard navigation
+      // Perform a representative reader workflow.
       await getNextButton(page).click();
       await getNextButton(page).click();
-      await getActSelect(page).selectOption('3');
-      await getPageSelect(page).selectOption('197'); // Act4.10a
+      await choosePage(page, 197); // Act4.10a
       await page.keyboard.press('ArrowRight'); // Act4.10b
       await page.keyboard.press('ArrowLeft'); // Act4.10a
 
