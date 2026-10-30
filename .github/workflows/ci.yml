@@ -17,10 +17,10 @@ permissions:
 jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js (20)
         uses: actions/setup-node@v4
@@ -40,10 +40,10 @@ jobs:
 
   test-and-build:
     name: Unit Tests & Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js (20)
         uses: actions/setup-node@v4
@@ -70,10 +70,10 @@ jobs:
 
   e2e:
     name: E2E Tests (Playwright)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js (20)
         uses: actions/setup-node@v4
@@ -93,11 +93,11 @@ jobs:
 
   sonar:
     name: SonarQube Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [ test-and-build ]
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -116,10 +116,10 @@ jobs:
 
   secrets:
     name: Secret Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -130,10 +130,10 @@ jobs:
 
   vulnerabilities:
     name: Dependency Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Scan with Trivy
         uses: aquasecurity/trivy-action@master
