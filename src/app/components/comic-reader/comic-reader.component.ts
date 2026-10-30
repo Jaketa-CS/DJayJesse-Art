@@ -141,11 +141,6 @@ export class ComicReaderComponent implements OnInit, AfterViewInit, AfterViewChe
     const host = this.elRef?.nativeElement;
     if (!host) return;
 
-    const actSelect = host.querySelector<HTMLSelectElement>('#act-select');
-    if (actSelect) {
-      actSelect.addEventListener('change', (e) => this.onActSelect(e));
-    }
-
     const pageSelect = host.querySelector<HTMLSelectElement>('#page-select');
     if (pageSelect) {
       pageSelect.addEventListener('change', (e) => this.onPageSelect(e));
@@ -229,13 +224,6 @@ export class ComicReaderComponent implements OnInit, AfterViewInit, AfterViewChe
   }
 
   // Select dropdown event handlers
-  onActSelect(event: Event): void {
-    const target = event.target as HTMLSelectElement | null;
-    if (target?.value) {
-      this.jumpToAct(target.value);
-    }
-  }
-
   onPageSelect(event: Event): void {
     const target = event.target as HTMLSelectElement | null;
     if (target?.value) {
@@ -343,12 +331,6 @@ export class ComicReaderComponent implements OnInit, AfterViewInit, AfterViewChe
   private syncSelectValues(): void {
     const host = this.elRef?.nativeElement;
     if (!host) return;
-
-    const actSelect = host.querySelector<HTMLSelectElement>('#act-select');
-    const actValue = String(this.currentAct.act);
-    if (actSelect && actSelect.value !== actValue) {
-      actSelect.value = actValue;
-    }
 
     const pageSelect = host.querySelector<HTMLSelectElement>('#page-select');
     const pageValue = String(this.currentIndex);

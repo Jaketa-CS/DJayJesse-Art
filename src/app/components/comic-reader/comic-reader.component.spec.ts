@@ -1,12 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
-  provideRouter,
-  Router,
   ActivatedRoute,
   convertToParamMap,
   ParamMap,
+  provideRouter,
+  Router,
 } from '@angular/router';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BehaviorSubject } from 'rxjs';
 import { ComicReaderComponent } from './comic-reader.component';
 import { comicPages } from '@/data/comicManifest';
@@ -115,7 +115,8 @@ describe('ComicReaderComponent', () => {
 
       const indicator = getIndicator();
       expect(indicator).toBeTruthy();
-      expect(indicator.textContent).toContain('Act 1');
+      expect(indicator.textContent).toContain('Page 1');
+      expect(indicator.textContent).not.toContain('Act');
       expect(indicator.textContent).toContain('313');
 
       const progressBar = getProgressBar();
@@ -539,15 +540,11 @@ describe('ComicReaderComponent', () => {
       expect(getImage().getAttribute('src')).toBe('/comic-pages/Act5.1.png');
     });
 
-    it('should update component when Act select dropdown changes via DOM event', () => {
-      const actSelect = getActSelect();
-      actSelect.value = '2';
-      actSelect.dispatchEvent(new Event('change'));
-      fixture.detectChanges();
-
-      expect(component.currentIndex).toBe(67);
-      expect(component.currentPage.filename).toBe('Act2.1.png');
-      expect(getImage().getAttribute('src')).toBe('/comic-pages/Act2.1.png');
+    it('should display only a page selector with continuous page numbers', () => {
+      expect(getActSelect()).toBeNull();
+      const pageSelect = getPageSelect();
+      expect(pageSelect.options[0].textContent?.trim()).toBe('Page 1');
+      expect(pageSelect.options[67].textContent?.trim()).toBe('Page 68');
     });
 
     it('should ignore invalid act numbers in jumpToAct', () => {

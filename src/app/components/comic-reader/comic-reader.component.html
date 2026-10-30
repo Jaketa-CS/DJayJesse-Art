@@ -73,8 +73,7 @@
       class="flex items-center gap-2 text-neutral-200 text-xs sm:text-sm font-medium"
     >
       <span data-testid="page-label">{{ currentPage.pageLabel }}</span>
-      <span class="text-neutral-500">•</span>
-      <span data-testid="progress-text" class="text-neutral-400">{{ progressLabel }}</span>
+      <span data-testid="progress-text" class="text-neutral-400">of {{ totalPages }}</span>
     </div>
 
     <!-- Next Button (→) -->
@@ -91,19 +90,8 @@
       <span class="sr-only">Next Page</span>
     </button>
 
-    <!-- Unobtrusive Act & Page Jump Selectors -->
+    <!-- Page Jump Selector -->
     <div class="flex items-center gap-2 ml-1 sm:ml-2">
-      <label for="act-select" class="sr-only">Jump to Act</label>
-      <select
-        id="act-select"
-        data-testid="act-select"
-        class="bg-neutral-900 border border-neutral-800 text-neutral-300 text-xs rounded px-2 py-1.5 focus:outline-none focus:border-neutral-600 transition-colors cursor-pointer"
-      >
-        @for (act of acts; track act.Act) {
-          <option value="{{ act.act }}">Act {{ act.act }}</option>
-        }
-      </select>
-
       <label for="page-select" class="sr-only">Jump to Page</label>
       <select
         id="page-select"

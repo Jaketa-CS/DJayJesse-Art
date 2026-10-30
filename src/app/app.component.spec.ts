@@ -16,16 +16,16 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should have the title "Hilmi & Seven"', () => {
+  it('should have the title "Himli & Seven"', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('Hilmi & Seven');
+    expect(app.title).toEqual('Himli & Seven');
   });
 
   it('should render branding header with title', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('header')?.textContent).toContain('Hilmi & Seven');
+    expect(compiled.querySelector('header')?.textContent).toContain('Himli & Seven');
   });
 });

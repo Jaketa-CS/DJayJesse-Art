@@ -7,7 +7,6 @@ import { RouterOutlet } from '@angular/router';
   imports: [RouterOutlet],
   template: `
     <div class="min-h-screen bg-[#383838] text-white flex flex-col font-sans">
-      <!-- Minimal Monochrome Application Header -->
       <header class="py-4 text-center">
         <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white">{{ title }}</h1>
       </header>
@@ -20,5 +19,5 @@ import { RouterOutlet } from '@angular/router';
   `,
 })
 export class AppComponent {
-  title = 'Hilmi & Seven';
+  title = 'Himli & Seven';
 }

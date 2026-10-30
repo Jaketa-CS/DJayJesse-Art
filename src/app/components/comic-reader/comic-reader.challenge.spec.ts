@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter, ActivatedRoute, convertToParamMap, ParamMap } from '@angular/router';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { ActivatedRoute, convertToParamMap, ParamMap, provideRouter } from '@angular/router';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { BehaviorSubject } from 'rxjs';
 import { ComicReaderComponent } from './comic-reader.component';
 import { comicPages } from '@/data/comicManifest';
@@ -18,9 +18,6 @@ describe('Milestone 2 Adversarial Challenge — ComicReaderComponent', () => {
   const getNextButton = (): HTMLButtonElement =>
     (compiled.querySelector('[data-testid="next-button"]') ||
       compiled.querySelector('[data-testid="next-page-btn"]')) as HTMLButtonElement;
-
-  const getActSelect = (): HTMLSelectElement =>
-    compiled.querySelector('[data-testid="act-select"]') as HTMLSelectElement;
 
   const getPageSelect = (): HTMLSelectElement =>
     compiled.querySelector('[data-testid="page-select"]') as HTMLSelectElement;
@@ -116,15 +113,6 @@ describe('Milestone 2 Adversarial Challenge — ComicReaderComponent', () => {
       component.jumpToPage(20);
       fixture.detectChanges();
 
-      // Test component internal act-select
-      const actSelect = getActSelect();
-      expect(actSelect).toBeTruthy();
-      actSelect.focus();
-      actSelect.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
-      fixture.detectChanges();
-      expect(component.currentIndex).toBe(20);
-
       // Test component internal page-select
       const pageSelect = getPageSelect();
       expect(pageSelect).toBeTruthy();
@@ -175,7 +163,6 @@ describe('Milestone 2 Adversarial Challenge — ComicReaderComponent', () => {
       component.jumpToPage(30);
       fixture.detectChanges();
 
-      // contenteditable="true"
       const ce1 = document.createElement('div');
       ce1.setAttribute('contenteditable', 'true');
       ce1.tabIndex = 0;
@@ -490,7 +477,7 @@ describe('Milestone 2 Adversarial Challenge — ComicReaderComponent', () => {
       expect(component.currentPage.act).toBe(1);
       expect(component.currentPage.pageNum).toBe(11);
       expect(component.currentPage.subPage).toBe('');
-      expect(component.currentPage.pageLabel).toBe('Act 1, Page 11');
+      expect(component.currentPage.pageLabel).toBe('Page 11');
 
       // Step forward -> Act1.11b (index 11)
       component.nextPage();
@@ -501,7 +488,7 @@ describe('Milestone 2 Adversarial Challenge — ComicReaderComponent', () => {
       expect(component.currentPage.act).toBe(1);
       expect(component.currentPage.pageNum).toBe(11);
       expect(component.currentPage.subPage).toBe('b');
-      expect(component.currentPage.pageLabel).toBe('Act 1, Page 11b');
+      expect(component.currentPage.pageLabel).toBe('Page 12');
 
       // Step forward -> Act1.12 (index 12)
       component.nextPage();
@@ -512,7 +499,7 @@ describe('Milestone 2 Adversarial Challenge — ComicReaderComponent', () => {
       expect(component.currentPage.act).toBe(1);
       expect(component.currentPage.pageNum).toBe(12);
       expect(component.currentPage.subPage).toBe('');
-      expect(component.currentPage.pageLabel).toBe('Act 1, Page 12');
+      expect(component.currentPage.pageLabel).toBe('Page 13');
 
       // Step backward -> Act1.11b (index 11)
       component.previousPage();

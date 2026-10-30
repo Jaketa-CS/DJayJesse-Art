@@ -5,7 +5,7 @@ export const routes: Routes = [
   {
     path: '',
     component: ComicReaderComponent,
-    title: 'Hilmi & Seven',
+    title: 'Himli & Seven',
   },
   {
     path: '**',

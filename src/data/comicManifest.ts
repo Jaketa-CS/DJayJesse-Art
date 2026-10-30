@@ -78,7 +78,7 @@ export function buildComicCatalog(filenames: string[] = ALL_COMIC_FILENAMES): Co
 
     const subSuffix = key.subPage ? `${key.subPage}` : '';
     const id = `act-${key.act}-page-${key.pageNum}${subSuffix}`;
-    const pageLabel = `Act ${key.act}, Page ${key.pageNum}${subSuffix}`;
+    const pageLabel = `Page ${i + 1}`;
 
     pages.push({
       id,
