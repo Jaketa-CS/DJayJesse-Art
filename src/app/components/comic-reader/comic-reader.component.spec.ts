@@ -863,7 +863,7 @@ describe('ComicReaderComponent', () => {
       component.scrollToCurrentPageInArchive();
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      expect(scrollSpy).toHaveBeenCalledWith({ block: 'center', inline: 'center' });
+      expect(scrollSpy).toHaveBeenCalledWith(expect.objectContaining({ block: 'center' }));
     });
 
     it('should jump to selected page and close modal when a page is selected', () => {

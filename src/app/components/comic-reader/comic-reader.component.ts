@@ -222,15 +222,40 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   public scrollToCurrentPageInArchive(): void {
     if (typeof window === 'undefined') return;
 
-    setTimeout(() => {
+    const performScroll = () => {
+      const container = this.elRef?.nativeElement.querySelector(
+        '#archive-scroll-container'
+      ) as HTMLElement | null;
       const targetEl = this.elRef?.nativeElement.querySelector(
         `#archive-page-${this.currentIndex}`
       ) as HTMLElement | null;
 
-      if (targetEl && typeof targetEl.scrollIntoView === 'function') {
-        targetEl.scrollIntoView({ block: 'center', inline: 'center' });
+      if (!targetEl) return false;
+
+      if (container) {
+        const targetRect = targetEl.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        const relativeTop = targetRect.top - containerRect.top + container.scrollTop;
+        container.scrollTop = Math.max(
+          0,
+          relativeTop - container.clientHeight / 2 + targetRect.height / 2
+        );
       }
-    }, 0);
+
+      if (typeof targetEl.scrollIntoView === 'function') {
+        try {
+          targetEl.scrollIntoView({ block: 'center', inline: 'nearest' });
+        } catch {
+          targetEl.scrollIntoView({ block: 'center' });
+        }
+      }
+
+      return true;
+    };
+
+    setTimeout(performScroll, 0);
+    setTimeout(performScroll, 50);
+    setTimeout(performScroll, 150);
   }
 
   closeArchiveModal(): void {
