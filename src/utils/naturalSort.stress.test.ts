@@ -284,8 +284,9 @@ describe('Empirical Challenge: naturalSort & comicManifest Stress Tests', () => 
         idSet.add(page.id);
 
         const subSuffix = page.subPage ? page.subPage : '';
+        const webpFilename = page.filename.replace(/\.png$/i, '.webp');
         expect(page.id).toBe(`act-${page.act}-page-${page.pageNum}${subSuffix}`);
-        expect(page.src).toBe(`/comic-pages/${page.filename}`);
+        expect(page.src).toBe(`/comic-pages-v1/${webpFilename}`);
       }
       expect(idSet.size).toBe(313);
     });

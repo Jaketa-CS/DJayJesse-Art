@@ -80,13 +80,13 @@ export function buildComicCatalog(filenames: string[] = ALL_COMIC_FILENAMES): Co
     const subSuffix = key.subPage ? `${key.subPage}` : '';
     const id = `act-${key.act}-page-${key.pageNum}${subSuffix}`;
     const pageLabel = `Page ${i + 1}`;
-    const thumbFilename = filename.replace(/\.png$/i, '.webp');
+    const webpFilename = filename.replace(/\.png$/i, '.webp');
 
     pages.push({
       id,
       filename,
-      src: `/comic-pages/${filename}`,
-      thumbSrc: `/comic-thumbs/${thumbFilename}`,
+      src: `/comic-pages-v1/${webpFilename}`,
+      thumbSrc: `/comic-thumbs/${webpFilename}`,
       act: key.act,
       pageNum: key.pageNum,
       subPage: key.subPage,

@@ -60,7 +60,7 @@ describe('ComicReaderComponent', () => {
 
     it('should initialize at Page 1 (Act1.1.png) with accurate properties', () => {
       expect(component.currentPage.filename).toBe('Act1.1.png');
-      expect(component.currentPage.src).toBe('/comic-pages/Act1.1.png');
+      expect(component.currentPage.src).toBe('/comic-pages-v1/Act1.1.webp');
       expect(component.currentPage.act).toBe(1);
       expect(component.currentPage.pageNum).toBe(1);
       expect(component.currentPage.subPage).toBe('');
@@ -79,7 +79,7 @@ describe('ComicReaderComponent', () => {
     it('should render initial DOM elements with page 1, disabled Previous, and enabled Next', () => {
       const img = getImage();
       expect(img).toBeTruthy();
-      expect(img.getAttribute('src')).toBe('/comic-pages/Act1.1.png');
+      expect(img.getAttribute('src')).toBe('/comic-pages-v1/Act1.1.webp');
 
       const prevBtn = getPrevButton();
       expect(prevBtn).toBeTruthy();
@@ -108,7 +108,7 @@ describe('ComicReaderComponent', () => {
 
       expect(component.currentIndex).toBe(1);
       expect(component.currentPage.filename).toBe('Act1.2.png');
-      expect(getImage().getAttribute('src')).toBe('/comic-pages/Act1.2.png');
+      expect(getImage().getAttribute('src')).toBe('/comic-pages-v1/Act1.2.webp');
 
       // Previous button should now be enabled
       expect(getPrevButton().disabled).toBe(false);
@@ -126,7 +126,7 @@ describe('ComicReaderComponent', () => {
 
       expect(component.currentIndex).toBe(1);
       expect(component.currentPage.filename).toBe('Act1.2.png');
-      expect(getImage().getAttribute('src')).toBe('/comic-pages/Act1.2.png');
+      expect(getImage().getAttribute('src')).toBe('/comic-pages-v1/Act1.2.webp');
 
       prevBtn.click();
       fixture.detectChanges();
@@ -145,7 +145,7 @@ describe('ComicReaderComponent', () => {
 
       expect(component.currentIndex).toBe(5);
       expect(component.currentPage.filename).toBe('Act1.6.png');
-      expect(getImage().getAttribute('src')).toBe('/comic-pages/Act1.6.png');
+      expect(getImage().getAttribute('src')).toBe('/comic-pages-v1/Act1.6.webp');
     });
 
     it('should present a clean comic stage without hover overlay zones', () => {
@@ -163,7 +163,7 @@ describe('ComicReaderComponent', () => {
 
       expect(component.currentIndex).toBe(1);
       expect(component.currentPage.filename).toBe('Act1.2.png');
-      expect(getImage().getAttribute('src')).toBe('/comic-pages/Act1.2.png');
+      expect(getImage().getAttribute('src')).toBe('/comic-pages-v1/Act1.2.webp');
     });
   });
 
@@ -249,7 +249,7 @@ describe('ComicReaderComponent', () => {
 
       expect(component.currentIndex).toBe(1);
       expect(component.currentPage.filename).toBe('Act1.2.png');
-      expect(getImage().getAttribute('src')).toBe('/comic-pages/Act1.2.png');
+      expect(getImage().getAttribute('src')).toBe('/comic-pages-v1/Act1.2.webp');
     });
 
     it('should return to previous page when ArrowLeft key is pressed', () => {
@@ -470,7 +470,7 @@ describe('ComicReaderComponent', () => {
       expect(component.currentIndex).toBe(0);
       expect(component.currentPage.filename).toBe('Act1.1.png');
       expect(component.currentAct.act).toBe(1);
-      expect(getImage().getAttribute('src')).toBe('/comic-pages/Act1.1.png');
+      expect(getImage().getAttribute('src')).toBe('/comic-pages-v1/Act1.1.webp');
     });
 
     it('should jump to Act 2 start (index 67, Act2.1.png)', () => {
@@ -481,7 +481,7 @@ describe('ComicReaderComponent', () => {
       expect(component.currentPage.filename).toBe('Act2.1.png');
       expect(component.currentAct.act).toBe(2);
       expect(component.currentAct.title).toBe('Act II');
-      expect(getImage().getAttribute('src')).toBe('/comic-pages/Act2.1.png');
+      expect(getImage().getAttribute('src')).toBe('/comic-pages-v1/Act2.1.webp');
     });
 
     it('should jump to Act 3 start (index 133, Act3.1.png)', () => {
@@ -492,7 +492,7 @@ describe('ComicReaderComponent', () => {
       expect(component.currentPage.filename).toBe('Act3.1.png');
       expect(component.currentAct.act).toBe(3);
       expect(component.currentAct.title).toBe('Act III');
-      expect(getImage().getAttribute('src')).toBe('/comic-pages/Act3.1.png');
+      expect(getImage().getAttribute('src')).toBe('/comic-pages-v1/Act3.1.webp');
     });
 
     it('should jump to Act 4 start (index 188, Act4.1.png)', () => {
@@ -503,7 +503,7 @@ describe('ComicReaderComponent', () => {
       expect(component.currentPage.filename).toBe('Act4.1.png');
       expect(component.currentAct.act).toBe(4);
       expect(component.currentAct.title).toBe('Act IV');
-      expect(getImage().getAttribute('src')).toBe('/comic-pages/Act4.1.png');
+      expect(getImage().getAttribute('src')).toBe('/comic-pages-v1/Act4.1.webp');
     });
 
     it('should jump to Act 5 start (index 254, Act5.1.png)', () => {
@@ -514,7 +514,7 @@ describe('ComicReaderComponent', () => {
       expect(component.currentPage.filename).toBe('Act5.1.png');
       expect(component.currentAct.act).toBe(5);
       expect(component.currentAct.title).toBe('Act V');
-      expect(getImage().getAttribute('src')).toBe('/comic-pages/Act5.1.png');
+      expect(getImage().getAttribute('src')).toBe('/comic-pages-v1/Act5.1.webp');
     });
 
     it('should display continuous page numbers in progressLabel', () => {
@@ -547,7 +547,7 @@ describe('ComicReaderComponent', () => {
       expect(component.currentPage.filename).toBe('Act1.11b.png');
       expect(component.currentPage.pageNum).toBe(11);
       expect(component.currentPage.subPage).toBe('b');
-      expect(getImage().getAttribute('src')).toBe('/comic-pages/Act1.11b.png');
+      expect(getImage().getAttribute('src')).toBe('/comic-pages-v1/Act1.11b.webp');
       expect(component.progressLabel).toContain('Page 12 of 313');
     });
 
@@ -582,7 +582,7 @@ describe('ComicReaderComponent', () => {
       expect(component.currentPage.filename).toBe('Act4.10a.png');
       expect(component.currentPage.pageNum).toBe(10);
       expect(component.currentPage.subPage).toBe('a');
-      expect(getImage().getAttribute('src')).toBe('/comic-pages/Act4.10a.png');
+      expect(getImage().getAttribute('src')).toBe('/comic-pages-v1/Act4.10a.webp');
     });
 
     it('should jump to Act 4 sub-page Act4.10b.png (global index 198)', () => {
@@ -595,7 +595,7 @@ describe('ComicReaderComponent', () => {
       expect(component.currentPage.filename).toBe('Act4.10b.png');
       expect(component.currentPage.pageNum).toBe(10);
       expect(component.currentPage.subPage).toBe('b');
-      expect(getImage().getAttribute('src')).toBe('/comic-pages/Act4.10b.png');
+      expect(getImage().getAttribute('src')).toBe('/comic-pages-v1/Act4.10b.webp');
     });
 
     it('should navigate sequentially through Act 4 sub-page sequence (Act4.9 -> Act4.10a -> Act4.10b -> Act4.11)', () => {
@@ -625,7 +625,7 @@ describe('ComicReaderComponent', () => {
 
       expect(component.currentIndex).toBe(11);
       expect(component.currentPage.filename).toBe('Act1.11b.png');
-      expect(getImage().getAttribute('src')).toBe('/comic-pages/Act1.11b.png');
+      expect(getImage().getAttribute('src')).toBe('/comic-pages-v1/Act1.11b.webp');
     });
 
     it('should close the page menu when clicking outside the reader', () => {

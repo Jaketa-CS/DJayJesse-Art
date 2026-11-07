@@ -204,10 +204,12 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
 
   jumpToPageByFilename(filename: string): boolean {
     const normalized = filename.trim().toLowerCase();
-    const target = this.pages.find(
-      (p) =>
-        p.filename.toLowerCase() === normalized || p.filename.toLowerCase() === `${normalized}.png`
-    );
+    const normalizedNoExt = normalized.replace(/\.(png|webp)$/i, '');
+    const target = this.pages.find((p) => {
+      const pNormalized = p.filename.toLowerCase();
+      const pNoExt = pNormalized.replace(/\.(png|webp)$/i, '');
+      return pNormalized === normalized || pNoExt === normalizedNoExt;
+    });
     if (target) {
       this.jumpToPage(target.globalIndex);
       return true;
@@ -549,12 +551,14 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
       if (num > this.totalPages) return this.totalPages - 1;
     }
 
-    // Filename lookup (e.g., Act1.11b or Act1.11b.png)
+    // Filename lookup (e.g., Act1.11b, Act1.11b.png, or Act1.11b.webp)
     const normalized = trimmed.toLowerCase();
-    const byFilename = this.pages.findIndex(
-      (p) =>
-        p.filename.toLowerCase() === normalized || p.filename.toLowerCase() === `${normalized}.png`
-    );
+    const normalizedNoExt = normalized.replace(/\.(png|webp)$/i, '');
+    const byFilename = this.pages.findIndex((p) => {
+      const pNormalized = p.filename.toLowerCase();
+      const pNoExt = pNormalized.replace(/\.(png|webp)$/i, '');
+      return pNormalized === normalized || pNoExt === normalizedNoExt;
+    });
     if (byFilename !== -1) {
       return byFilename;
     }
