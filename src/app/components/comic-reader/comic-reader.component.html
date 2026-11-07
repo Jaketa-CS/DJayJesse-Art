@@ -7,7 +7,9 @@
     class="relative flex min-h-[min(80vh,56.25vw,45rem)] w-full max-w-7xl items-center justify-center"
   >
     <!-- Image Wrapper with Bottom Scrubber Overlay -->
-    <div class="relative inline-block max-w-full overflow-hidden">
+    <div
+      class="relative w-[min(100%,calc(80vh*16/9))] aspect-[16/9] max-w-full overflow-hidden mx-auto"
+    >
       <img
         id="comic-page-image"
         data-testid="comic-image"
@@ -18,7 +20,7 @@
         alt="{{ currentPage.pageLabel }}"
         (load)="onImageLoad()"
         (error)="onImageError()"
-        class="max-h-[80vh] w-auto max-w-full object-contain block mx-auto transition-opacity duration-150 {{
+        class="w-full h-full object-contain block mx-auto transition-opacity duration-150 {{
           !isLastPage ? 'cursor-pointer' : ''
         }} {{ !imageLoaded && !imageError ? 'opacity-0' : '' }} {{
           imageLoaded ? 'opacity-100' : ''
