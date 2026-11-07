@@ -37,6 +37,7 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   imageLoaded = false;
   imageError = false;
   pageMenuOpen = false;
+  archiveModalOpen = false;
 
   // -------------------------------------------------------------
   // Derived Reactive Properties (O(1) Getters)
@@ -211,6 +212,37 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     this.pageMenuOpen = false;
   }
 
+  openArchiveModal(): void {
+    this.archiveModalOpen = true;
+    this.pageMenuOpen = false;
+    this.cdr?.markForCheck();
+    this.scrollToCurrentPageInArchive();
+  }
+
+  public scrollToCurrentPageInArchive(): void {
+    if (typeof window === 'undefined') return;
+
+    setTimeout(() => {
+      const targetEl = this.elRef?.nativeElement.querySelector(
+        `#archive-page-${this.currentIndex}`
+      ) as HTMLElement | null;
+
+      if (targetEl && typeof targetEl.scrollIntoView === 'function') {
+        targetEl.scrollIntoView({ block: 'center', inline: 'center' });
+      }
+    }, 0);
+  }
+
+  closeArchiveModal(): void {
+    this.archiveModalOpen = false;
+    this.cdr?.markForCheck();
+  }
+
+  selectPageAndClose(index: number): void {
+    this.jumpToPage(index);
+    this.closeArchiveModal();
+  }
+
   // Image loading events
   onImageLoad(): void {
     this.imageLoaded = true;
@@ -230,6 +262,9 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
 
   @HostListener('click', ['$event'])
   onHostClick(event: MouseEvent): void {
+    if (this.archiveModalOpen) {
+      return;
+    }
     const target = event.target as HTMLElement | null;
     if (target?.id === 'comic-page-image' || target?.dataset['testid'] === 'comic-image') {
       this.nextPage();
@@ -247,6 +282,16 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
 
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
+    if (this.archiveModalOpen) {
+      if (event.key === 'Escape') {
+        if (typeof event.preventDefault === 'function') {
+          event.preventDefault();
+        }
+        this.closeArchiveModal();
+      }
+      return;
+    }
+
     // Ignore modifier combinations (Ctrl, Alt, Meta)
     if (event.ctrlKey || event.metaKey || event.altKey) {
       return;

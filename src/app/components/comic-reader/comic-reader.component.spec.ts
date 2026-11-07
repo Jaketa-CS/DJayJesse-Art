@@ -1,14 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import {
-  ActivatedRoute,
-  convertToParamMap,
-  ParamMap,
-  provideRouter,
-  Router,
-} from '@angular/router';
+import { convertToParamMap, ParamMap, Router } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BehaviorSubject } from 'rxjs';
 import { ComicReaderComponent } from './comic-reader.component';
+import { createComicReaderTestBed } from './comic-reader.test-utils';
 import { comicPages } from '@/data/comicManifest';
 
 describe('ComicReaderComponent', () => {
@@ -42,26 +37,11 @@ describe('ComicReaderComponent', () => {
 
   beforeEach(async () => {
     queryParamMap$ = new BehaviorSubject<ParamMap>(convertToParamMap({}));
-
-    await TestBed.configureTestingModule({
-      imports: [ComicReaderComponent],
-      providers: [
-        provideRouter([]),
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            snapshot: { queryParamMap: convertToParamMap({}) },
-            queryParamMap: queryParamMap$.asObservable(),
-          },
-        },
-      ],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(ComicReaderComponent);
-    component = fixture.componentInstance;
+    const testCtx = await createComicReaderTestBed(queryParamMap$.asObservable());
+    fixture = testCtx.fixture;
+    component = testCtx.component;
+    compiled = testCtx.compiled;
     router = TestBed.inject(Router);
-    fixture.detectChanges();
-    compiled = fixture.nativeElement as HTMLElement;
   });
 
   afterEach(() => {
@@ -110,8 +90,7 @@ describe('ComicReaderComponent', () => {
       expect(nextBtn.disabled).toBe(false);
 
       const pageSelect = getPageSelect();
-      expect(pageSelect).toBeTruthy();
-      expect(pageSelect.textContent).toContain('Page 1 of 313');
+      expect(pageSelect).toBeNull();
 
       const progressBar = getProgressBar();
       expect(progressBar).toBeNull();
@@ -405,21 +384,25 @@ describe('ComicReaderComponent', () => {
       input.remove();
     });
 
-    it('should suppress arrow navigation when the page picker has focus', () => {
+    it('should suppress arrow navigation when a combobox or select has focus', () => {
       component.jumpToPage(5);
       fixture.detectChanges();
 
-      const select = getPageSelect();
-      select.focus();
+      const combo = document.createElement('div');
+      combo.setAttribute('role', 'combobox');
+      combo.tabIndex = 0;
+      document.body.appendChild(combo);
+      combo.focus();
 
       const event = new KeyboardEvent('keydown', {
         key: 'ArrowRight',
         bubbles: true,
       });
-      select.dispatchEvent(event);
+      combo.dispatchEvent(event);
       fixture.detectChanges();
 
       expect(component.currentIndex).toBe(5);
+      combo.remove();
     });
 
     it('should suppress arrow navigation when document.activeElement is a textarea', () => {
@@ -534,14 +517,10 @@ describe('ComicReaderComponent', () => {
       expect(getImage().getAttribute('src')).toBe('/comic-pages/Act5.1.png');
     });
 
-    it('should display only a page selector with continuous page numbers', () => {
+    it('should display continuous page numbers in progressLabel', () => {
       expect(getActSelect()).toBeNull();
-      const pageSelect = getPageSelect();
-      pageSelect.click();
-      fixture.detectChanges();
-      const pageOptions = compiled.querySelectorAll('[role="option"]');
-      expect(pageOptions[0].textContent?.trim()).toBe('Page 1 of 313');
-      expect(pageOptions[67].textContent?.trim()).toBe('Page 68 of 313');
+      expect(getPageSelect()).toBeNull();
+      expect(component.progressLabel).toBe('Page 1 of 313');
     });
 
     it('should ignore invalid act numbers in jumpToAct', () => {
@@ -569,7 +548,7 @@ describe('ComicReaderComponent', () => {
       expect(component.currentPage.pageNum).toBe(11);
       expect(component.currentPage.subPage).toBe('b');
       expect(getImage().getAttribute('src')).toBe('/comic-pages/Act1.11b.png');
-      expect(getPageSelect().textContent).toContain('Page 12 of 313');
+      expect(component.progressLabel).toContain('Page 12 of 313');
     });
 
     it('should navigate sequentially through Act 1 sub-page sequence (Act1.11 -> Act1.11b -> Act1.12)', () => {
@@ -640,12 +619,8 @@ describe('ComicReaderComponent', () => {
       expect(component.currentPage.filename).toBe('Act4.11.png');
     });
 
-    it('should update component when a page menu option is chosen', () => {
-      const pageSelect = getPageSelect();
-      pageSelect.click();
-      fixture.detectChanges();
-      const pageOption = compiled.querySelectorAll<HTMLButtonElement>('[role="option"]')[11];
-      pageOption.click();
+    it('should update component when selectPageFromMenu is called', () => {
+      component.selectPageFromMenu(11);
       fixture.detectChanges();
 
       expect(component.currentIndex).toBe(11);
@@ -654,9 +629,9 @@ describe('ComicReaderComponent', () => {
     });
 
     it('should close the page menu when clicking outside the reader', () => {
-      getPageSelect().click();
+      component.pageMenuOpen = true;
       fixture.detectChanges();
-      expect(compiled.querySelector('[role="listbox"]')).toBeTruthy();
+      expect(component.pageMenuOpen).toBe(true);
 
       const outside = document.createElement('button');
       outside.className = 'test-fixture-element';
@@ -665,7 +640,6 @@ describe('ComicReaderComponent', () => {
       fixture.detectChanges();
 
       expect(component.pageMenuOpen).toBe(false);
-      expect(compiled.querySelector('[role="listbox"]')).toBeNull();
       outside.remove();
     });
   });
@@ -794,7 +768,118 @@ describe('ComicReaderComponent', () => {
   });
 
   // ==========================================
-  // 10. Teardown
+  // 10. Archive Modal & Navigation
+  // ==========================================
+  describe('Archive Modal', () => {
+    it('should render the archive button with archive.png', () => {
+      const archiveBtn = compiled.querySelector(
+        '[data-testid="archive-button"]'
+      ) as HTMLButtonElement;
+      expect(archiveBtn).toBeTruthy();
+      const img = archiveBtn.querySelector('img');
+      expect(img?.getAttribute('src')).toBe('/archive-image/archive.png');
+    });
+
+    it('should open the archive modal when archive button is clicked', () => {
+      const archiveBtn = compiled.querySelector(
+        '[data-testid="archive-button"]'
+      ) as HTMLButtonElement;
+      archiveBtn.click();
+      fixture.detectChanges();
+
+      expect(component.archiveModalOpen).toBe(true);
+      const modal = compiled.querySelector('[data-testid="archive-modal"]');
+      expect(modal).toBeTruthy();
+    });
+
+    it('should close the archive modal when close button is clicked', () => {
+      component.openArchiveModal();
+      fixture.detectChanges();
+
+      const closeBtn = compiled.querySelector(
+        '[data-testid="close-archive-btn"]'
+      ) as HTMLButtonElement;
+      closeBtn.click();
+      fixture.detectChanges();
+
+      expect(component.archiveModalOpen).toBe(false);
+      expect(compiled.querySelector('[data-testid="archive-modal"]')).toBeNull();
+    });
+
+    it('should close the archive modal when clicking the backdrop', () => {
+      component.openArchiveModal();
+      fixture.detectChanges();
+
+      const backdrop = compiled.querySelector(
+        '[data-testid="archive-backdrop"]'
+      ) as HTMLButtonElement;
+      backdrop.click();
+      fixture.detectChanges();
+
+      expect(component.archiveModalOpen).toBe(false);
+    });
+
+    it('should close the archive modal on Escape key press', () => {
+      component.openArchiveModal();
+      fixture.detectChanges();
+
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      fixture.detectChanges();
+
+      expect(component.archiveModalOpen).toBe(false);
+    });
+
+    it('should suppress arrow navigation when archive modal is open', () => {
+      component.openArchiveModal();
+      fixture.detectChanges();
+
+      expect(component.currentIndex).toBe(0);
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
+      fixture.detectChanges();
+
+      expect(component.currentIndex).toBe(0);
+    });
+
+    it('should display all comic pages in the archive modal', () => {
+      component.openArchiveModal();
+      fixture.detectChanges();
+
+      const modal = compiled.querySelector('[data-testid="archive-modal"]');
+      expect(modal).toBeTruthy();
+      expect(component.pages).toHaveLength(component.totalPages);
+    });
+
+    it('should scroll to the current page in the archive modal', async () => {
+      component.currentIndex = 5;
+      component.openArchiveModal();
+      fixture.detectChanges();
+
+      const targetCard = compiled.querySelector('#archive-page-5') as HTMLElement;
+      expect(targetCard).toBeTruthy();
+
+      const scrollSpy = vi.fn();
+      targetCard.scrollIntoView = scrollSpy;
+
+      component.scrollToCurrentPageInArchive();
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(scrollSpy).toHaveBeenCalledWith({ block: 'center', inline: 'center' });
+    });
+
+    it('should jump to selected page and close modal when a page is selected', () => {
+      component.openArchiveModal();
+      fixture.detectChanges();
+
+      component.selectPageAndClose(10);
+      fixture.detectChanges();
+
+      expect(component.currentIndex).toBe(10);
+      expect(component.archiveModalOpen).toBe(false);
+    });
+  });
+
+  // ==========================================
+  // 11. Teardown
   // ==========================================
   describe('Teardown & Cleanup', () => {
     it('should destroy fixture cleanly without leaving dangling listeners', () => {

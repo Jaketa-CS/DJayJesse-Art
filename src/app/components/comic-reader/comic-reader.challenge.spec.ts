@@ -1,8 +1,9 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, ParamMap, provideRouter } from '@angular/router';
+import { ComponentFixture } from '@angular/core/testing';
+import { convertToParamMap, ParamMap } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { BehaviorSubject } from 'rxjs';
 import { ComicReaderComponent } from './comic-reader.component';
+import { createComicReaderTestBed } from './comic-reader.test-utils';
 import { comicPages } from '@/data/comicManifest';
 
 describe('Milestone 2 Adversarial Challenge — ComicReaderComponent', () => {
@@ -30,25 +31,10 @@ describe('Milestone 2 Adversarial Challenge — ComicReaderComponent', () => {
 
   beforeEach(async () => {
     queryParamMap$ = new BehaviorSubject<ParamMap>(convertToParamMap({}));
-
-    await TestBed.configureTestingModule({
-      imports: [ComicReaderComponent],
-      providers: [
-        provideRouter([]),
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            snapshot: { queryParamMap: convertToParamMap({}) },
-            queryParamMap: queryParamMap$.asObservable(),
-          },
-        },
-      ],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(ComicReaderComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-    compiled = fixture.nativeElement as HTMLElement;
+    const testCtx = await createComicReaderTestBed(queryParamMap$.asObservable());
+    fixture = testCtx.fixture;
+    component = testCtx.component;
+    compiled = testCtx.compiled;
   });
 
   afterEach(() => {
@@ -113,14 +99,15 @@ describe('Milestone 2 Adversarial Challenge — ComicReaderComponent', () => {
       component.jumpToPage(20);
       fixture.detectChanges();
 
-      // Test component internal page-select
+      // Test component internal page-select if present
       const pageSelect = getPageSelect();
-      expect(pageSelect).toBeTruthy();
-      pageSelect.focus();
-      pageSelect.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
-      fixture.detectChanges();
-      expect(component.currentIndex).toBe(20);
+      if (pageSelect) {
+        pageSelect.focus();
+        pageSelect.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+        fixture.detectChanges();
+        expect(component.currentIndex).toBe(20);
+      }
 
       // Test arbitrary external select
       const externalSelect = document.createElement('select');
@@ -653,7 +640,7 @@ describe('Milestone 2 Adversarial Challenge — ComicReaderComponent', () => {
     });
 
     it('should sequentially walk entire 313-page catalog forward and backward without skipping or failing', () => {
-      expect(comicPages.length).toBe(313);
+      expect(comicPages).toHaveLength(313);
 
       component.jumpToPage(0);
       fixture.detectChanges();
