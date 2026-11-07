@@ -179,9 +179,10 @@
                   class="relative w-full aspect-[16/10] overflow-hidden rounded bg-neutral-950 flex items-center justify-center"
                 >
                   <img
-                    [src]="p.src"
+                    [ngSrc]="p.src"
                     [alt]="p.pageLabel"
-                    loading="lazy"
+                    width="320"
+                    height="200"
                     class="h-full w-full object-contain transition-opacity duration-150 group-hover:opacity-90"
                   />
                   @if (i === currentIndex) {
