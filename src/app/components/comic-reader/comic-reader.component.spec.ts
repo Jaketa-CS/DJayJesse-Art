@@ -879,7 +879,125 @@ describe('ComicReaderComponent', () => {
   });
 
   // ==========================================
-  // 11. Teardown
+  // 11. Reading Progress Scrubber Bar
+  // ==========================================
+  describe('Reading Progress Scrubber Bar', () => {
+    it('should render the reading progress container and slider', () => {
+      const container = compiled.querySelector('[data-testid="reading-progress-container"]');
+      expect(container).toBeTruthy();
+
+      const slider = container?.querySelector('[role="slider"]');
+      expect(slider).toBeTruthy();
+      expect(slider?.getAttribute('aria-valuenow')).toBe('1');
+      expect(slider?.getAttribute('aria-valuemax')).toBe(String(component.totalPages));
+    });
+
+    it('should calculate progressExactPercentage correctly', () => {
+      component.currentIndex = 0;
+      expect(component.progressExactPercentage).toBeCloseTo((1 / component.totalPages) * 100, 2);
+
+      component.currentIndex = component.totalPages - 1;
+      expect(component.progressExactPercentage).toBe(100);
+    });
+
+    it('should scrub to target page when clicked', () => {
+      const mockElement = {
+        getBoundingClientRect: () => ({
+          left: 0,
+          width: 1000,
+          top: 0,
+          bottom: 10,
+          right: 1000,
+          height: 10,
+        }),
+      };
+      const mockEvent = {
+        currentTarget: mockElement,
+        clientX: 500, // 50%
+      } as unknown as MouseEvent;
+
+      component.onProgressScrub(mockEvent);
+      expect(component.currentIndex).toBe(Math.floor(0.5 * component.totalPages));
+    });
+
+    it('should update hover state on progress hover and clear on leave', () => {
+      const mockElement = {
+        getBoundingClientRect: () => ({
+          left: 0,
+          width: 1000,
+          top: 0,
+          bottom: 10,
+          right: 1000,
+          height: 10,
+        }),
+      };
+      const mockEvent = {
+        currentTarget: mockElement,
+        clientX: 250, // 25%
+      } as unknown as MouseEvent;
+
+      component.onProgressHover(mockEvent);
+      expect(component.hoveredPageNumber).toBe(Math.floor(0.25 * component.totalPages) + 1);
+      expect(component.hoveredPositionPercent).toBe(25);
+
+      component.onProgressLeave();
+      expect(component.hoveredPageNumber).toBeNull();
+    });
+
+    it('should support pointer drag scrubbing across the bar', () => {
+      const mockElement = {
+        getBoundingClientRect: () => ({
+          left: 0,
+          width: 1000,
+          top: 0,
+          bottom: 10,
+          right: 1000,
+          height: 10,
+        }),
+        setPointerCapture: vi.fn(),
+        releasePointerCapture: vi.fn(),
+        hasPointerCapture: vi.fn().mockReturnValue(true),
+      };
+
+      const downEvent = {
+        button: 0,
+        pointerType: 'mouse',
+        pointerId: 1,
+        currentTarget: mockElement,
+        clientX: 200, // 20%
+      } as unknown as PointerEvent;
+
+      component.onScrubberPointerDown(downEvent);
+      expect(component.isScrubbing).toBe(true);
+      expect(component.currentIndex).toBe(Math.floor(0.2 * component.totalPages));
+      expect(mockElement.setPointerCapture).toHaveBeenCalledWith(1);
+
+      // Drag to 60%
+      const moveEvent = {
+        currentTarget: mockElement,
+        clientX: 600,
+      } as unknown as PointerEvent;
+
+      component.onScrubberPointerMove(moveEvent);
+      expect(component.dragVisualPercent).toBe(60);
+      expect(component.progressExactPercentage).toBe(60);
+
+      // Release pointer at 60%
+      const upEvent = {
+        pointerId: 1,
+        clientX: 600,
+        currentTarget: mockElement,
+      } as unknown as PointerEvent;
+
+      component.onScrubberPointerUp(upEvent);
+      expect(component.isScrubbing).toBe(false);
+      expect(component.currentIndex).toBe(Math.floor(0.6 * component.totalPages));
+      expect(mockElement.releasePointerCapture).toHaveBeenCalledWith(1);
+    });
+  });
+
+  // ==========================================
+  // 12. Teardown
   // ==========================================
   describe('Teardown & Cleanup', () => {
     it('should destroy fixture cleanly without leaving dangling listeners', () => {

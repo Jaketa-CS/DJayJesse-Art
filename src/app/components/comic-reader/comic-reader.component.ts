@@ -38,6 +38,13 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   imageError = false;
   pageMenuOpen = false;
   archiveModalOpen = false;
+  hoveredPageNumber: number | null = null;
+  hoveredPositionPercent = 0;
+  isScrubbing = false;
+  dragVisualPercent: number | null = null;
+  private scrubRafId: number | null = null;
+  private pendingScrubTarget: HTMLElement | null = null;
+  private pendingClientX = 0;
 
   // -------------------------------------------------------------
   // Derived Reactive Properties (O(1) Getters)
@@ -84,6 +91,14 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
 
   get progressPercentage(): number {
     return Math.round((this.humanPageNumber / this.totalPages) * 100);
+  }
+
+  get progressExactPercentage(): number {
+    if (this.isScrubbing && this.dragVisualPercent !== null) {
+      return this.dragVisualPercent;
+    }
+    if (this.totalPages <= 0) return 0;
+    return (this.humanPageNumber / this.totalPages) * 100;
   }
 
   // Two-way dropdown binding helpers
@@ -138,6 +153,10 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.scrubRafId !== null) {
+      cancelAnimationFrame(this.scrubRafId);
+      this.scrubRafId = null;
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -268,6 +287,116 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     this.closeArchiveModal();
   }
 
+  // -------------------------------------------------------------
+  // Progress Scrubber Bar Handlers (Smooth Click & Drag)
+  // -------------------------------------------------------------
+
+  onProgressScrub(event: MouseEvent): void {
+    const target = event.currentTarget as HTMLElement;
+    this.commitScrub(event.clientX, target, true);
+  }
+
+  onScrubberPointerDown(event: PointerEvent): void {
+    if (event.button !== 0 && event.pointerType === 'mouse') return;
+    const target = event.currentTarget as HTMLElement;
+    try {
+      target.setPointerCapture(event.pointerId);
+    } catch {
+      // Fallback
+    }
+    this.isScrubbing = true;
+    this.updateDragVisual(event.clientX, target);
+    this.scheduleScrub(event.clientX, target, true);
+  }
+
+  onScrubberPointerMove(event: PointerEvent): void {
+    if (!this.isScrubbing) return;
+    const target = event.currentTarget as HTMLElement;
+    this.updateDragVisual(event.clientX, target);
+    this.scheduleScrub(event.clientX, target, false);
+  }
+
+  onScrubberPointerUp(event: PointerEvent): void {
+    if (!this.isScrubbing) return;
+    this.isScrubbing = false;
+    this.dragVisualPercent = null;
+    if (this.scrubRafId !== null) {
+      cancelAnimationFrame(this.scrubRafId);
+      this.scrubRafId = null;
+    }
+
+    const target = event.currentTarget as HTMLElement;
+    try {
+      if (target.hasPointerCapture(event.pointerId)) {
+        target.releasePointerCapture(event.pointerId);
+      }
+    } catch {
+      // Fallback
+    }
+
+    this.commitScrub(event.clientX, target, true);
+  }
+
+  private updateDragVisual(clientX: number, target: HTMLElement): void {
+    const rect = target.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+    this.dragVisualPercent = (x / rect.width) * 100;
+    this.cdr?.markForCheck();
+  }
+
+  private scheduleScrub(clientX: number, target: HTMLElement, immediate: boolean): void {
+    this.pendingClientX = clientX;
+    this.pendingScrubTarget = target;
+
+    if (immediate) {
+      this.commitScrub(clientX, target, false);
+      return;
+    }
+
+    if (this.scrubRafId === null) {
+      this.scrubRafId = requestAnimationFrame(() => {
+        this.scrubRafId = null;
+        if (this.pendingScrubTarget) {
+          this.commitScrub(this.pendingClientX, this.pendingScrubTarget, false);
+        }
+      });
+    }
+  }
+
+  private commitScrub(clientX: number, target: HTMLElement, syncRouter: boolean): void {
+    const rect = target.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+    const fraction = x / rect.width;
+    const targetIndex = Math.min(
+      this.totalPages - 1,
+      Math.max(0, Math.floor(fraction * this.totalPages))
+    );
+    if (targetIndex !== this.currentIndex) {
+      this.setPageIndex(targetIndex, syncRouter);
+    } else if (syncRouter) {
+      this.syncUrlWithCurrentPage();
+    }
+  }
+
+  onProgressHover(event: MouseEvent): void {
+    const target = event.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const hoverX = Math.max(0, Math.min(event.clientX - rect.left, rect.width));
+    const fraction = hoverX / rect.width;
+    this.hoveredPositionPercent = (hoverX / rect.width) * 100;
+    this.hoveredPageNumber = Math.min(
+      this.totalPages,
+      Math.max(1, Math.floor(fraction * this.totalPages) + 1)
+    );
+  }
+
+  onProgressLeave(): void {
+    this.hoveredPageNumber = null;
+  }
+
   // Image loading events
   onImageLoad(): void {
     this.imageLoaded = true;
@@ -377,7 +506,9 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   private setPageIndex(newIndex: number, syncRouter: boolean): void {
     if (newIndex === this.currentIndex) return;
     this.currentIndex = newIndex;
-    this.imageLoaded = false;
+    if (!this.isScrubbing) {
+      this.imageLoaded = false;
+    }
     this.imageError = false;
 
     if (syncRouter) {
