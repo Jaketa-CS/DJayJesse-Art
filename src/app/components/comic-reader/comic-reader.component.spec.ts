@@ -969,6 +969,221 @@ describe('ComicReaderComponent', () => {
       expect(component.currentIndex).toBe(Math.floor(0.6 * component.totalPages));
       expect(mockElement.releasePointerCapture).toHaveBeenCalledWith(1);
     });
+
+    describe('Debounced Image Loading, Thumbnails & Settle Timing', () => {
+      beforeEach(() => {
+        vi.useFakeTimers();
+      });
+
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it('should update label and scrubber position instantly, show thumbnail during drag, and defer URL and prefetch', () => {
+        const mockElement = {
+          getBoundingClientRect: () =>
+            ({
+              left: 0,
+              width: 1000,
+            }) as DOMRect,
+          setPointerCapture: vi.fn(),
+          releasePointerCapture: vi.fn(),
+          hasPointerCapture: vi.fn().mockReturnValue(true),
+        };
+        const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+        const preloadSpy = vi.spyOn(
+          component as unknown as { preloadAdjacentPages: () => void },
+          'preloadAdjacentPages'
+        );
+
+        // Start drag at 20%
+        const downEvent = {
+          button: 0,
+          pointerType: 'mouse',
+          pointerId: 1,
+          currentTarget: mockElement,
+          clientX: 200,
+        } as unknown as PointerEvent;
+        component.onScrubberPointerDown(downEvent);
+
+        const targetIndex = Math.floor(0.2 * component.totalPages);
+        expect(component.isScrubbing).toBe(true);
+        expect(component.currentIndex).toBe(targetIndex);
+        expect(component.humanPageNumber).toBe(targetIndex + 1);
+        expect(component.progressLabel).toBe(`Page ${targetIndex + 1} of ${component.totalPages}`);
+        // Displays thumbnail during drag
+        expect(component.displayedImageSrc).toBe(component.pages[targetIndex].thumbSrc);
+        expect(component.displayedImageSrc).toContain('/comic-thumbs/');
+        // URL and prefetch are deferred
+        expect(navigateSpy).not.toHaveBeenCalled();
+        expect(preloadSpy).not.toHaveBeenCalled();
+      });
+
+      it('should load full WebP and trigger deferred URL update and neighbor prefetch only after ~120ms pause', () => {
+        const mockElement = {
+          getBoundingClientRect: () =>
+            ({
+              left: 0,
+              width: 1000,
+            }) as DOMRect,
+          setPointerCapture: vi.fn(),
+          releasePointerCapture: vi.fn(),
+          hasPointerCapture: vi.fn().mockReturnValue(true),
+        };
+        const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+        const preloadSpy = vi.spyOn(
+          component as unknown as { preloadAdjacentPages: () => void },
+          'preloadAdjacentPages'
+        );
+
+        const downEvent = {
+          button: 0,
+          pointerType: 'mouse',
+          pointerId: 1,
+          currentTarget: mockElement,
+          clientX: 300,
+        } as unknown as PointerEvent;
+        component.onScrubberPointerDown(downEvent);
+        const targetIndex = Math.floor(0.3 * component.totalPages);
+
+        // Advance by 119ms (not settled yet)
+        vi.advanceTimersByTime(119);
+        expect(component.displayedImageSrc).toBe(component.pages[targetIndex].thumbSrc);
+        expect(navigateSpy).not.toHaveBeenCalled();
+        expect(preloadSpy).not.toHaveBeenCalled();
+
+        // Advance by 1ms (hits 120ms)
+        vi.advanceTimersByTime(1);
+        expect(component.displayedImageSrc).toBe(component.pages[targetIndex].src);
+        expect(component.displayedImageSrc).toContain('/comic-pages-v1/');
+        expect(navigateSpy).toHaveBeenCalledWith(
+          [],
+          expect.objectContaining({
+            queryParams: { page: targetIndex + 1 },
+          })
+        );
+        expect(preloadSpy).toHaveBeenCalled();
+      });
+
+      it('should load full WebP immediately upon pointer release before 120ms elapses', () => {
+        const mockElement = {
+          getBoundingClientRect: () =>
+            ({
+              left: 0,
+              width: 1000,
+            }) as DOMRect,
+          setPointerCapture: vi.fn(),
+          releasePointerCapture: vi.fn(),
+          hasPointerCapture: vi.fn().mockReturnValue(true),
+        };
+        const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+        const preloadSpy = vi.spyOn(
+          component as unknown as { preloadAdjacentPages: () => void },
+          'preloadAdjacentPages'
+        );
+
+        const downEvent = {
+          button: 0,
+          pointerType: 'mouse',
+          pointerId: 1,
+          currentTarget: mockElement,
+          clientX: 200,
+        } as unknown as PointerEvent;
+        component.onScrubberPointerDown(downEvent);
+
+        // Move to 50%
+        const moveEvent = {
+          currentTarget: mockElement,
+          clientX: 500,
+        } as unknown as PointerEvent;
+        component.onScrubberPointerMove(moveEvent);
+        const moveIndex = Math.floor(0.5 * component.totalPages);
+        expect(component.displayedImageSrc).toBe(component.pages[moveIndex].thumbSrc);
+        expect(navigateSpy).not.toHaveBeenCalled();
+
+        // Release immediately at 40ms without waiting for 120ms
+        vi.advanceTimersByTime(40);
+        const upEvent = {
+          pointerId: 1,
+          clientX: 500,
+          currentTarget: mockElement,
+        } as unknown as PointerEvent;
+        component.onScrubberPointerUp(upEvent);
+
+        expect(component.isScrubbing).toBe(false);
+        expect(component.displayedImageSrc).toBe(component.pages[moveIndex].src);
+        expect(navigateSpy).toHaveBeenCalledWith(
+          [],
+          expect.objectContaining({
+            queryParams: { page: moveIndex + 1 },
+          })
+        );
+        expect(preloadSpy).toHaveBeenCalled();
+      });
+
+      it('should keep keyboard, tap, and click navigation immediate without delay or thumbnail', () => {
+        const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+        const preloadSpy = vi.spyOn(
+          component as unknown as { preloadAdjacentPages: () => void },
+          'preloadAdjacentPages'
+        );
+
+        // Immediate nextPage (tap/click/keyboard)
+        component.nextPage();
+        expect(component.currentIndex).toBe(1);
+        expect(component.displayedImageSrc).toBe('/comic-pages-v1/Act1.2.webp');
+        expect(component.isScrubbing).toBe(false);
+        expect(navigateSpy).toHaveBeenCalledWith(
+          [],
+          expect.objectContaining({
+            queryParams: { page: 2 },
+          })
+        );
+        expect(preloadSpy).toHaveBeenCalled();
+
+        // Immediate jumpToPage
+        navigateSpy.mockClear();
+        preloadSpy.mockClear();
+        component.jumpToPage(10);
+        expect(component.currentIndex).toBe(10);
+        expect(component.displayedImageSrc).toBe(component.pages[10].src);
+        expect(navigateSpy).toHaveBeenCalledWith(
+          [],
+          expect.objectContaining({
+            queryParams: { page: 11 },
+          })
+        );
+        expect(preloadSpy).toHaveBeenCalled();
+      });
+
+      it('should support slider input debouncing and thumbnail preview', () => {
+        const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+        const preloadSpy = vi.spyOn(
+          component as unknown as { preloadAdjacentPages: () => void },
+          'preloadAdjacentPages'
+        );
+
+        const inputEvent = { target: { value: '80' } } as unknown as Event;
+        component.onSliderInput(inputEvent);
+
+        expect(component.currentIndex).toBe(79);
+        expect(component.isScrubbing).toBe(true);
+        expect(component.humanPageNumber).toBe(80);
+        expect(component.displayedImageSrc).toBe(component.pages[79].thumbSrc);
+        expect(navigateSpy).not.toHaveBeenCalled();
+        expect(preloadSpy).not.toHaveBeenCalled();
+
+        vi.advanceTimersByTime(120);
+        expect(component.displayedImageSrc).toBe(component.pages[79].src);
+        expect(navigateSpy).toHaveBeenCalledWith(
+          [],
+          expect.objectContaining({
+            queryParams: { page: 80 },
+          })
+        );
+        expect(preloadSpy).toHaveBeenCalled();
+      });
+    });
   });
 
   // ==========================================

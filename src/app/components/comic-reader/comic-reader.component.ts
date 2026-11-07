@@ -39,14 +39,21 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   pageMenuOpen = false;
   archiveModalOpen = false;
   isScrubbing = false;
+  showFullImage = true;
   dragVisualPercent: number | null = null;
-  private scrubThrottleTimer: ReturnType<typeof setTimeout> | null = null;
-  private pendingScrubData: { clientX: number; target: HTMLElement } | null = null;
+  private scrubSettleTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly preloadedUrls = new Set<string>();
 
   // -------------------------------------------------------------
   // Derived Reactive Properties (O(1) Getters)
   // -------------------------------------------------------------
+
+  get displayedImageSrc(): string {
+    if (this.isScrubbing && !this.showFullImage) {
+      return this.currentPage.thumbSrc;
+    }
+    return this.currentPage.src;
+  }
 
   get currentPage(): ComicPageItem {
     return this.pages[this.currentIndex] ?? this.pages[0];
@@ -151,9 +158,9 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.scrubThrottleTimer) {
-      clearTimeout(this.scrubThrottleTimer);
-      this.scrubThrottleTimer = null;
+    if (this.scrubSettleTimer) {
+      clearTimeout(this.scrubSettleTimer);
+      this.scrubSettleTimer = null;
     }
     this.destroy$.next();
     this.destroy$.complete();
@@ -297,28 +304,26 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     if (!Number.isNaN(pageNum)) {
       const targetIndex = Math.min(this.totalPages - 1, Math.max(0, pageNum - 1));
       this.isScrubbing = true;
-      if (targetIndex !== this.currentIndex) {
-        this.setPageIndex(targetIndex, false);
-      }
+      this.showFullImage = false;
+      this.currentIndex = targetIndex;
+      this.imageError = false;
+      this.dragVisualPercent = ((targetIndex + 1) / this.totalPages) * 100;
+      this.scheduleScrubSettle();
+      this.cdr?.markForCheck();
     }
   }
 
   onSliderChange(event: Event): void {
-    this.isScrubbing = false;
-    this.dragVisualPercent = null;
     const input = event.target as HTMLInputElement;
     const pageNum = Number.parseInt(input.value, 10);
     if (!Number.isNaN(pageNum)) {
       const targetIndex = Math.min(this.totalPages - 1, Math.max(0, pageNum - 1));
-      if (targetIndex !== this.currentIndex) {
-        this.setPageIndex(targetIndex, true);
-      } else {
-        this.syncUrlWithCurrentPage();
-        this.preloadAdjacentPages();
-      }
-    } else {
-      this.preloadAdjacentPages();
+      this.currentIndex = targetIndex;
+      this.imageError = false;
     }
+    this.isScrubbing = false;
+    this.dragVisualPercent = null;
+    this.settleScrub();
   }
 
   onScrubberPointerDown(event: PointerEvent): void {
@@ -330,37 +335,23 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
       // Fallback
     }
     this.isScrubbing = true;
+    this.showFullImage = false;
     this.updateDragVisual(event.clientX, target);
-    this.commitScrub(event.clientX, target, false);
+    this.applyScrubIndex(event.clientX, target);
+    this.scheduleScrubSettle();
   }
 
   onScrubberPointerMove(event: PointerEvent): void {
     if (!this.isScrubbing) return;
     const target = event.currentTarget as HTMLElement;
+    this.showFullImage = false;
     this.updateDragVisual(event.clientX, target);
-
-    this.pendingScrubData = { clientX: event.clientX, target };
-    if (!this.scrubThrottleTimer) {
-      this.scrubThrottleTimer = setTimeout(() => {
-        this.scrubThrottleTimer = null;
-        if (this.pendingScrubData && this.isScrubbing) {
-          this.commitScrub(this.pendingScrubData.clientX, this.pendingScrubData.target, false);
-        }
-      }, 50);
-    }
+    this.applyScrubIndex(event.clientX, target);
+    this.scheduleScrubSettle();
   }
 
   onScrubberPointerUp(event: PointerEvent): void {
     if (!this.isScrubbing) return;
-    this.isScrubbing = false;
-    this.dragVisualPercent = null;
-
-    if (this.scrubThrottleTimer) {
-      clearTimeout(this.scrubThrottleTimer);
-      this.scrubThrottleTimer = null;
-    }
-    this.pendingScrubData = null;
-
     const target = event.currentTarget as HTMLElement;
     try {
       if (target.hasPointerCapture(event.pointerId)) {
@@ -370,8 +361,10 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
       // Fallback
     }
 
-    this.commitScrub(event.clientX, target, true);
-    this.preloadAdjacentPages();
+    this.applyScrubIndex(event.clientX, target);
+    this.isScrubbing = false;
+    this.dragVisualPercent = null;
+    this.settleScrub();
   }
 
   private updateDragVisual(clientX: number, target: HTMLElement): void {
@@ -382,7 +375,7 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     this.cdr?.markForCheck();
   }
 
-  private commitScrub(clientX: number, target: HTMLElement, syncRouter: boolean): void {
+  private applyScrubIndex(clientX: number, target: HTMLElement): void {
     const rect = target.getBoundingClientRect();
     if (rect.width <= 0) return;
     const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
@@ -392,10 +385,31 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
       Math.max(0, Math.floor(fraction * this.totalPages))
     );
     if (targetIndex !== this.currentIndex) {
-      this.setPageIndex(targetIndex, syncRouter);
-    } else if (syncRouter) {
-      this.syncUrlWithCurrentPage();
+      this.currentIndex = targetIndex;
+      this.imageError = false;
+      this.cdr?.markForCheck();
     }
+  }
+
+  private scheduleScrubSettle(): void {
+    if (this.scrubSettleTimer) {
+      clearTimeout(this.scrubSettleTimer);
+    }
+    this.scrubSettleTimer = setTimeout(() => {
+      this.scrubSettleTimer = null;
+      this.settleScrub();
+    }, 120);
+  }
+
+  private settleScrub(): void {
+    if (this.scrubSettleTimer) {
+      clearTimeout(this.scrubSettleTimer);
+      this.scrubSettleTimer = null;
+    }
+    this.showFullImage = true;
+    this.syncUrlWithCurrentPage();
+    this.preloadAdjacentPages();
+    this.cdr?.markForCheck();
   }
 
   // Image loading events
@@ -506,15 +520,19 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
 
   private setPageIndex(newIndex: number, syncRouter: boolean): void {
     if (newIndex === this.currentIndex) return;
+    if (this.scrubSettleTimer) {
+      clearTimeout(this.scrubSettleTimer);
+      this.scrubSettleTimer = null;
+    }
+    this.isScrubbing = false;
+    this.showFullImage = true;
     this.currentIndex = newIndex;
     this.imageError = false;
 
     if (syncRouter) {
       this.syncUrlWithCurrentPage();
     }
-    if (!this.isScrubbing) {
-      this.preloadAdjacentPages();
-    }
+    this.preloadAdjacentPages();
     this.cdr?.markForCheck();
   }
 
