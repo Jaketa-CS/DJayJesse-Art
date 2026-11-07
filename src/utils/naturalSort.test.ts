@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { parseComicPageKey, sortComicFilenames } from './naturalSort';
-import { ALL_COMIC_FILENAMES, comicManifest, comicPages, comicActs } from '../data/comicManifest';
+import { ALL_COMIC_FILENAMES, comicActs, comicManifest, comicPages } from '@/data/comicManifest';
 
 describe('naturalSort', () => {
   it('parses valid comic page filenames accurately', () => {
