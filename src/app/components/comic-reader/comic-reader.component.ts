@@ -39,7 +39,6 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   pageMenuOpen = false;
   archiveModalOpen = false;
   isScrubbing = false;
-  showFullImage = true;
   dragVisualPercent: number | null = null;
   private scrubSettleTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly preloadedUrls = new Set<string>();
@@ -302,7 +301,6 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     if (!Number.isNaN(pageNum)) {
       const targetIndex = Math.min(this.totalPages - 1, Math.max(0, pageNum - 1));
       this.isScrubbing = true;
-      this.showFullImage = true;
       this.currentIndex = targetIndex;
       this.imageError = false;
       this.dragVisualPercent = ((targetIndex + 1) / this.totalPages) * 100;
@@ -315,8 +313,7 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const pageNum = Number.parseInt(input.value, 10);
     if (!Number.isNaN(pageNum)) {
-      const targetIndex = Math.min(this.totalPages - 1, Math.max(0, pageNum - 1));
-      this.currentIndex = targetIndex;
+      this.currentIndex = Math.min(this.totalPages - 1, Math.max(0, pageNum - 1));
       this.imageError = false;
     }
     this.isScrubbing = false;
@@ -333,7 +330,6 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
       // Fallback
     }
     this.isScrubbing = true;
-    this.showFullImage = true;
     this.updateDragVisual(event.clientX, target);
     this.applyScrubIndex(event.clientX, target);
     this.scheduleScrubSettle();
@@ -348,7 +344,6 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
       return;
     }
     const target = event.currentTarget as HTMLElement;
-    this.showFullImage = true;
     this.updateDragVisual(event.clientX, target);
     this.applyScrubIndex(event.clientX, target);
     this.scheduleScrubSettle();
@@ -426,7 +421,6 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
       clearTimeout(this.scrubSettleTimer);
       this.scrubSettleTimer = null;
     }
-    this.showFullImage = true;
     this.syncUrlWithCurrentPage();
     this.preloadAdjacentPages();
     this.cdr?.markForCheck();
@@ -545,7 +539,6 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
       this.scrubSettleTimer = null;
     }
     this.isScrubbing = false;
-    this.showFullImage = true;
     this.currentIndex = newIndex;
     this.imageError = false;
 

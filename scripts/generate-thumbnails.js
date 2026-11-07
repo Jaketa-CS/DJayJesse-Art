@@ -2,7 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
 
-const SOURCE_DIR = path.resolve('public/comic-pages');
+const LEGACY_SOURCE_DIR = path.resolve('public/comic-pages');
+const VERSIONED_SOURCE_DIR = path.resolve('public/comic-pages-v1');
+const SOURCE_DIR = fs.existsSync(LEGACY_SOURCE_DIR) ? LEGACY_SOURCE_DIR : VERSIONED_SOURCE_DIR;
 const TARGET_DIR = path.resolve('public/comic-thumbs');
 const THUMB_WIDTH = 400;
 const THUMB_HEIGHT = 225; // 16:9 ratio (for 2560x1440)
@@ -19,7 +21,7 @@ async function generateThumbnails() {
     fs.mkdirSync(TARGET_DIR, { recursive: true });
   }
 
-  const files = fs.readdirSync(SOURCE_DIR).filter((file) => file.toLowerCase().endsWith('.png'));
+  const files = fs.readdirSync(SOURCE_DIR).filter((file) => /\.(png|webp)$/i.test(file));
 
   console.log(
     `Processing ${files.length} comic pages into 2x WebP thumbnails (${THUMB_WIDTH}x${THUMB_HEIGHT})...`
@@ -32,7 +34,7 @@ async function generateThumbnails() {
   await Promise.all(
     files.map(async (file) => {
       const inputPath = path.join(SOURCE_DIR, file);
-      const outputFilename = file.replace(/\.png$/i, '.webp');
+      const outputFilename = file.replace(/\.(png|webp)$/i, '.webp');
       const outputPath = path.join(TARGET_DIR, outputFilename);
 
       const inputStat = fs.statSync(inputPath);

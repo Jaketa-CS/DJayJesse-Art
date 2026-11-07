@@ -11,31 +11,32 @@ import {
 } from '@/data/comicManifest';
 
 describe('Empirical Challenge: naturalSort & comicManifest Stress Tests', () => {
-  const DISK_COMIC_DIR = path.resolve(__dirname, '../../public/comic-pages');
+  const DISK_COMIC_DIR = path.resolve(__dirname, '../../public/comic-pages-v1');
 
   // -------------------------------------------------------------
   // Test Suite 1: Disk Asset & Manifest Parity
   // -------------------------------------------------------------
   describe('1. Disk Asset & Manifest Parity', () => {
-    it('verifies disk directory exists and contains exactly 313 PNG files', () => {
+    it('verifies disk directory exists and contains exactly 313 WebP files', () => {
       expect(fs.existsSync(DISK_COMIC_DIR)).toBe(true);
       const diskFiles = fs.readdirSync(DISK_COMIC_DIR);
       expect(diskFiles).toHaveLength(313);
 
-      const nonPng = diskFiles.filter((f) => !f.endsWith('.png'));
-      expect(nonPng).toEqual([]);
+      const nonWebp = diskFiles.filter((f) => !f.endsWith('.webp'));
+      expect(nonWebp).toEqual([]);
     });
 
     it('verifies ALL_COMIC_FILENAMES exactly matches the set of disk files', () => {
       const diskFiles = fs.readdirSync(DISK_COMIC_DIR);
-      const diskSet = new Set(diskFiles);
+      const diskAsPng = diskFiles.map((f) => f.replace(/\.webp$/i, '.png'));
+      const diskSet = new Set(diskAsPng);
       const manifestSet = new Set(ALL_COMIC_FILENAMES);
 
       expect(ALL_COMIC_FILENAMES).toHaveLength(313);
       expect(manifestSet.size).toBe(313);
 
       // Check difference in both directions
-      const missingFromManifest = diskFiles.filter((f) => !manifestSet.has(f));
+      const missingFromManifest = diskAsPng.filter((f) => !manifestSet.has(f));
       const extraInManifest = ALL_COMIC_FILENAMES.filter((f) => !diskSet.has(f));
 
       expect(missingFromManifest).toEqual([]);
@@ -43,7 +44,7 @@ describe('Empirical Challenge: naturalSort & comicManifest Stress Tests', () => 
     });
 
     it('verifies sorting disk files produces the exact sequence in comicManifest.pages', () => {
-      const diskFiles = fs.readdirSync(DISK_COMIC_DIR);
+      const diskFiles = fs.readdirSync(DISK_COMIC_DIR).map((f) => f.replace(/\.webp$/i, '.png'));
       const sortedDisk = sortComicFilenames(diskFiles);
       const manifestFilenames = comicPages.map((p) => p.filename);
 
