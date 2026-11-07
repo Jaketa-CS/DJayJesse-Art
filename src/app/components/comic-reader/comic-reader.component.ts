@@ -40,6 +40,9 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   archiveModalOpen = false;
   isScrubbing = false;
   dragVisualPercent: number | null = null;
+  private scrubThrottleTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingScrubData: { clientX: number; target: HTMLElement } | null = null;
+  private readonly preloadedUrls = new Set<string>();
 
   // -------------------------------------------------------------
   // Derived Reactive Properties (O(1) Getters)
@@ -148,6 +151,10 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.scrubThrottleTimer) {
+      clearTimeout(this.scrubThrottleTimer);
+      this.scrubThrottleTimer = null;
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -326,13 +333,28 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     if (!this.isScrubbing) return;
     const target = event.currentTarget as HTMLElement;
     this.updateDragVisual(event.clientX, target);
-    this.commitScrub(event.clientX, target, false);
+
+    this.pendingScrubData = { clientX: event.clientX, target };
+    if (!this.scrubThrottleTimer) {
+      this.scrubThrottleTimer = setTimeout(() => {
+        this.scrubThrottleTimer = null;
+        if (this.pendingScrubData && this.isScrubbing) {
+          this.commitScrub(this.pendingScrubData.clientX, this.pendingScrubData.target, false);
+        }
+      }, 50);
+    }
   }
 
   onScrubberPointerUp(event: PointerEvent): void {
     if (!this.isScrubbing) return;
     this.isScrubbing = false;
     this.dragVisualPercent = null;
+
+    if (this.scrubThrottleTimer) {
+      clearTimeout(this.scrubThrottleTimer);
+      this.scrubThrottleTimer = null;
+    }
+    this.pendingScrubData = null;
 
     const target = event.currentTarget as HTMLElement;
     try {
@@ -344,6 +366,7 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     }
 
     this.commitScrub(event.clientX, target, true);
+    this.preloadAdjacentPages();
   }
 
   private updateDragVisual(clientX: number, target: HTMLElement): void {
@@ -484,7 +507,9 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     if (syncRouter) {
       this.syncUrlWithCurrentPage();
     }
-    this.preloadAdjacentPages();
+    if (!this.isScrubbing) {
+      this.preloadAdjacentPages();
+    }
     this.cdr?.markForCheck();
   }
 
@@ -555,6 +580,8 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     }
 
     for (const src of toPreload) {
+      if (this.preloadedUrls.has(src)) continue;
+      this.preloadedUrls.add(src);
       try {
         const img = new Image();
         img.src = src;
