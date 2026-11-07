@@ -137,7 +137,7 @@
 
       <!-- Modal Card -->
       <div
-        class="relative z-10 flex max-h-[88vh] w-full max-w-5xl flex-col rounded-2xl border border-neutral-800 bg-neutral-900 shadow-2xl overflow-hidden"
+        class="relative z-10 flex max-h-[88vh] w-full max-w-5xl flex-col border border-neutral-800 bg-neutral-900 shadow-2xl overflow-hidden"
       >
         <!-- Modal Top Bar (Close Button Only) -->
         <div
@@ -147,7 +147,7 @@
             type="button"
             data-testid="close-archive-btn"
             (click)="closeArchiveModal()"
-            class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors focus:outline-none cursor-pointer"
+            class="inline-flex h-9 w-9 items-center justify-center text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors focus:outline-none cursor-pointer"
             aria-label="Close Archive"
           >
             <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -172,7 +172,7 @@
                 [id]="'archive-page-' + i"
                 [autofocus]="i === currentIndex"
                 (click)="selectPageAndClose(i)"
-                class="group flex flex-col items-center rounded-lg border p-1.5 transition-colors duration-200 ease-out text-left focus:outline-none cursor-pointer {{
+                class="group flex flex-col items-center border p-1.5 transition-colors duration-200 ease-out text-left focus:outline-none cursor-pointer {{
                   i === currentIndex
                     ? 'border-neutral-200 bg-neutral-800 ring-2 ring-neutral-400'
                     : 'border-neutral-800 bg-neutral-950/60 hover:border-neutral-500 hover:bg-neutral-800/80'
@@ -180,7 +180,7 @@
                 [attr.aria-current]="i === currentIndex ? 'page' : null"
               >
                 <div
-                  class="relative w-full aspect-[16/9] overflow-hidden rounded bg-neutral-950 flex items-center justify-center"
+                  class="relative w-full aspect-[16/9] overflow-hidden bg-neutral-950 flex items-center justify-center"
                 >
                   <img
                     [ngSrc]="p.thumbSrc"
@@ -191,7 +191,7 @@
                   />
                   @if (i === currentIndex) {
                     <span
-                      class="absolute top-1 right-1 rounded bg-white text-black text-[10px] font-bold px-1.5 py-0.5 shadow"
+                      class="absolute top-1 right-1 bg-white text-black text-[10px] font-bold px-1.5 py-0.5 shadow"
                     >
                       Current
                     </span>
