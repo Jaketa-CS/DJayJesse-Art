@@ -71,56 +71,6 @@
       <span class="sr-only">Previous Page</span>
     </button>
 
-    <!-- Page progress and jump menu (Commented out per user request) -->
-    <!--
-    <div class="relative">
-      <button
-        type="button"
-        id="page-select"
-        data-testid="page-select"
-        role="combobox"
-        [attr.aria-expanded]="pageMenuOpen"
-        aria-controls="page-menu"
-        aria-haspopup="listbox"
-        (click)="pageMenuOpen = !pageMenuOpen"
-        class="inline-flex h-12 items-center gap-2 rounded border border-neutral-800 bg-neutral-900 px-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800 focus:outline-none focus:border-neutral-600 sm:text-base"
-      >
-        {{ progressLabel }}
-        <svg class="h-4 w-4" viewBox="0 0 16 16" aria-hidden="true">
-          <path
-            d="m4 6 4 4 4-4"
-            fill="none"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.8"
-          />
-        </svg>
-      </button>
-
-      @if (pageMenuOpen) {
-        <div
-          id="page-menu"
-          role="listbox"
-          aria-label="Choose a page"
-          class="absolute left-0 top-full z-10 mt-2 max-h-64 min-w-full overflow-y-auto rounded border border-neutral-700 bg-neutral-900 py-1 shadow-xl"
-        >
-          @for (p of pages; track p.id; let i = $index) {
-            <button
-              type="button"
-              role="option"
-              [attr.aria-selected]="i === currentIndex"
-              (click)="selectPageFromMenu(i)"
-              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm text-neutral-200 hover:bg-neutral-800 focus:bg-neutral-800 focus:outline-none"
-            >
-              Page {{ i + 1 }} of {{ totalPages }}
-            </button>
-          }
-        </div>
-      }
-    </div>
-    -->
-
     <!-- Next Button (→) -->
     <button
       type="button"
