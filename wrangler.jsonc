@@ -1,12 +1,13 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "djayjesse-art",
+  "pages_build_output_dir": "dist",
   "compatibility_date": "2026-10-28",
   "workers_dev": true,
   "preview_urls": true,
   "assets": {
     "directory": "./dist",
     "not_found_handling": "single-page-application",
-    "html_handling": "auto-trailing-slash"
+    "html_handling": "auto-trailing-slash",
   },
 }
