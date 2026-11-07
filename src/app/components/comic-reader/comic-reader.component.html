@@ -93,18 +93,30 @@
       id="archive-btn"
       data-testid="archive-button"
       (click)="openArchiveModal()"
-      class="inline-flex items-center justify-center p-1 transition-opacity duration-200 hover:opacity-80 active:opacity-70 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 cursor-pointer"
-      aria-label="Open Comic Archive"
+      class="group inline-flex flex-col items-center justify-center p-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 cursor-pointer"
+      aria-label="View Pages"
       aria-haspopup="dialog"
       [attr.aria-expanded]="archiveModalOpen"
     >
       <img
         ngSrc="/archive-image/archive.png"
         alt="Pages"
-        class="w-60 sm:w-80 md:w-96 max-w-[85vw] max-h-56 sm:max-h-64 h-auto object-contain"
+        class="w-72 sm:w-96 md:w-[28rem] lg:w-[32rem] max-w-[90vw] max-h-72 sm:max-h-80 md:max-h-96 h-auto object-contain transition-opacity duration-200 group-hover:opacity-90 group-active:opacity-75"
         height="2000"
         width="3000"
       />
+
+      <!-- Gallery Title Plate / Gutter Indicator -->
+      <div class="mt-1.5 inline-flex flex-col items-center justify-center">
+        <span
+          class="text-[11px] sm:text-xs font-medium uppercase tracking-[0.25em] text-neutral-400 group-hover:text-neutral-100 transition-colors duration-200"
+        >
+          View Pages
+        </span>
+        <div
+          class="mt-1 h-[1px] w-full bg-neutral-500 transition-colors duration-200 group-hover:bg-neutral-200"
+        ></div>
+      </div>
     </button>
   </div>
 
