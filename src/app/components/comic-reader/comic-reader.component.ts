@@ -312,7 +312,10 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
         this.setPageIndex(targetIndex, true);
       } else {
         this.syncUrlWithCurrentPage();
+        this.preloadAdjacentPages();
       }
+    } else {
+      this.preloadAdjacentPages();
     }
   }
 
