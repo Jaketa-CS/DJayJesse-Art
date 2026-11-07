@@ -134,6 +134,7 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (this.route) {
       this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+        if (this.isScrubbing) return;
         const pageParam = params.get('page');
         const actParam = params.get('act');
 
@@ -343,11 +344,33 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
 
   onScrubberPointerMove(event: PointerEvent): void {
     if (!this.isScrubbing) return;
+    if (event.pointerType === 'mouse' && event.buttons === 0) {
+      this.isScrubbing = false;
+      this.dragVisualPercent = null;
+      this.settleScrub();
+      return;
+    }
     const target = event.currentTarget as HTMLElement;
     this.showFullImage = false;
     this.updateDragVisual(event.clientX, target);
     this.applyScrubIndex(event.clientX, target);
     this.scheduleScrubSettle();
+  }
+
+  onScrubberPointerCancel(event: PointerEvent): void {
+    if (!this.isScrubbing) return;
+    const target = event.currentTarget as HTMLElement;
+    try {
+      if (target.hasPointerCapture(event.pointerId)) {
+        target.releasePointerCapture(event.pointerId);
+      }
+    } catch {
+      // Fallback
+    }
+
+    this.isScrubbing = false;
+    this.dragVisualPercent = null;
+    this.settleScrub();
   }
 
   onScrubberPointerUp(event: PointerEvent): void {

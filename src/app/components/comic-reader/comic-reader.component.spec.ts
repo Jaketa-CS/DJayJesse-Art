@@ -1183,6 +1183,98 @@ describe('ComicReaderComponent', () => {
         );
         expect(preloadSpy).toHaveBeenCalled();
       });
+
+      it('should handle pointercancel and clean up scrub state immediately', () => {
+        const mockElement = {
+          getBoundingClientRect: () =>
+            ({
+              left: 0,
+              width: 1000,
+            }) as DOMRect,
+          setPointerCapture: vi.fn(),
+          releasePointerCapture: vi.fn(),
+          hasPointerCapture: vi.fn().mockReturnValue(true),
+        };
+        const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+        const preloadSpy = vi.spyOn(
+          component as unknown as { preloadAdjacentPages: () => void },
+          'preloadAdjacentPages'
+        );
+
+        const downEvent = {
+          button: 0,
+          pointerType: 'touch',
+          pointerId: 1,
+          currentTarget: mockElement,
+          clientX: 400,
+        } as unknown as PointerEvent;
+        component.onScrubberPointerDown(downEvent);
+        const targetIndex = Math.floor(0.4 * component.totalPages);
+        expect(component.isScrubbing).toBe(true);
+
+        const cancelEvent = {
+          pointerId: 1,
+          currentTarget: mockElement,
+        } as unknown as PointerEvent;
+        component.onScrubberPointerCancel(cancelEvent);
+
+        expect(component.isScrubbing).toBe(false);
+        expect(component.dragVisualPercent).toBeNull();
+        expect(component.displayedImageSrc).toBe(component.pages[targetIndex].src);
+        expect(mockElement.releasePointerCapture).toHaveBeenCalledWith(1);
+        expect(navigateSpy).toHaveBeenCalledWith(
+          [],
+          expect.objectContaining({
+            queryParams: { page: targetIndex + 1 },
+          })
+        );
+        expect(preloadSpy).toHaveBeenCalled();
+      });
+
+      it('should handle move-without-press when mouse buttons === 0 and clean up scrub state', () => {
+        const mockElement = {
+          getBoundingClientRect: () =>
+            ({
+              left: 0,
+              width: 1000,
+            }) as DOMRect,
+          setPointerCapture: vi.fn(),
+          releasePointerCapture: vi.fn(),
+          hasPointerCapture: vi.fn().mockReturnValue(true),
+        };
+        const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+        // Start scrubbing
+        const downEvent = {
+          button: 0,
+          pointerType: 'mouse',
+          pointerId: 1,
+          currentTarget: mockElement,
+          clientX: 200,
+        } as unknown as PointerEvent;
+        component.onScrubberPointerDown(downEvent);
+        const targetIndex = Math.floor(0.2 * component.totalPages);
+        expect(component.isScrubbing).toBe(true);
+
+        // Pointer move event arrives with buttons === 0 (user released outside without capture)
+        const ghostMoveEvent = {
+          pointerType: 'mouse',
+          buttons: 0,
+          currentTarget: mockElement,
+          clientX: 500,
+        } as unknown as PointerEvent;
+        component.onScrubberPointerMove(ghostMoveEvent);
+
+        expect(component.isScrubbing).toBe(false);
+        expect(component.dragVisualPercent).toBeNull();
+        expect(component.displayedImageSrc).toBe(component.pages[targetIndex].src);
+        expect(navigateSpy).toHaveBeenCalledWith(
+          [],
+          expect.objectContaining({
+            queryParams: { page: targetIndex + 1 },
+          })
+        );
+      });
     });
   });
 
