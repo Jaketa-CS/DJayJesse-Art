@@ -5,5 +5,9 @@
 /comic-thumbs/*
   Cache-Control: public, max-age=31536000, immutable
 
+# Files in /archive-image/* must be version-renamed when changed (e.g. archive.v2.webp) due to immutable caching
+/archive-image/*
+  Cache-Control: public, max-age=31536000, immutable
+
 /assets/*
   Cache-Control: public, max-age=31536000, immutable

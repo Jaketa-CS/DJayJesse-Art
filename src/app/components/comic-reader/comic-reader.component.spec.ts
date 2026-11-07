@@ -771,13 +771,13 @@ describe('ComicReaderComponent', () => {
   // 10. Archive Modal & Navigation
   // ==========================================
   describe('Archive Modal', () => {
-    it('should render the archive button with archive.png', () => {
+    it('should render the archive button with archive.v1.webp', () => {
       const archiveBtn = compiled.querySelector(
         '[data-testid="archive-button"]'
       ) as HTMLButtonElement;
       expect(archiveBtn).toBeTruthy();
       const img = archiveBtn.querySelector('img');
-      expect(img?.getAttribute('src')).toBe('/archive-image/archive.png');
+      expect(img?.getAttribute('src')).toBe('/archive-image/archive.v1.webp');
     });
 
     it('should open the archive modal when archive button is clicked', () => {
