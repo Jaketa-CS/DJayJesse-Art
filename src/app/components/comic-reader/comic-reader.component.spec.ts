@@ -882,14 +882,36 @@ describe('ComicReaderComponent', () => {
   // 11. Reading Progress Scrubber Bar
   // ==========================================
   describe('Reading Progress Scrubber Bar', () => {
-    it('should render the reading progress container and slider', () => {
+    it('should render the reading progress container, accessible slider, and visual progress fill', () => {
       const container = compiled.querySelector('[data-testid="reading-progress-container"]');
       expect(container).toBeTruthy();
 
-      const slider = container?.querySelector('[role="slider"]');
+      const slider = container?.querySelector('input[type="range"]') as HTMLInputElement;
       expect(slider).toBeTruthy();
-      expect(slider?.getAttribute('aria-valuenow')).toBe('1');
-      expect(slider?.getAttribute('aria-valuemax')).toBe(String(component.totalPages));
+      expect(slider?.getAttribute('aria-label')).toBe('Comic Reading Progress');
+      expect(slider?.value).toBe('1');
+      expect(slider?.max).toBe(String(component.totalPages));
+
+      const fill = container?.querySelector('[data-testid="reading-progress-fill"]');
+      expect(fill).toBeTruthy();
+    });
+
+    it('should handle onSliderInput and onSliderChange correctly', () => {
+      const mockEvent = {
+        target: { value: '50' },
+      } as unknown as Event;
+
+      component.onSliderInput(mockEvent);
+      expect(component.isScrubbing).toBe(true);
+      expect(component.currentIndex).toBe(49);
+
+      const changeEvent = {
+        target: { value: '100' },
+      } as unknown as Event;
+
+      component.onSliderChange(changeEvent);
+      expect(component.isScrubbing).toBe(false);
+      expect(component.currentIndex).toBe(99);
     });
 
     it('should calculate progressExactPercentage correctly', () => {
@@ -900,60 +922,13 @@ describe('ComicReaderComponent', () => {
       expect(component.progressExactPercentage).toBe(100);
     });
 
-    it('should scrub to target page when clicked', () => {
-      const mockElement = {
-        getBoundingClientRect: () => ({
-          left: 0,
-          width: 1000,
-          top: 0,
-          bottom: 10,
-          right: 1000,
-          height: 10,
-        }),
-      };
-      const mockEvent = {
-        currentTarget: mockElement,
-        clientX: 500, // 50%
-      } as unknown as MouseEvent;
-
-      component.onProgressScrub(mockEvent);
-      expect(component.currentIndex).toBe(Math.floor(0.5 * component.totalPages));
-    });
-
-    it('should update hover state on progress hover and clear on leave', () => {
-      const mockElement = {
-        getBoundingClientRect: () => ({
-          left: 0,
-          width: 1000,
-          top: 0,
-          bottom: 10,
-          right: 1000,
-          height: 10,
-        }),
-      };
-      const mockEvent = {
-        currentTarget: mockElement,
-        clientX: 250, // 25%
-      } as unknown as MouseEvent;
-
-      component.onProgressHover(mockEvent);
-      expect(component.hoveredPageNumber).toBe(Math.floor(0.25 * component.totalPages) + 1);
-      expect(component.hoveredPositionPercent).toBe(25);
-
-      component.onProgressLeave();
-      expect(component.hoveredPageNumber).toBeNull();
-    });
-
     it('should support pointer drag scrubbing across the bar', () => {
       const mockElement = {
-        getBoundingClientRect: () => ({
-          left: 0,
-          width: 1000,
-          top: 0,
-          bottom: 10,
-          right: 1000,
-          height: 10,
-        }),
+        getBoundingClientRect: () =>
+          ({
+            left: 0,
+            width: 1000,
+          }) as DOMRect,
         setPointerCapture: vi.fn(),
         releasePointerCapture: vi.fn(),
         hasPointerCapture: vi.fn().mockReturnValue(true),

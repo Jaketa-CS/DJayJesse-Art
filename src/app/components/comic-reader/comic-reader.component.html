@@ -32,14 +32,24 @@
         class="absolute bottom-0 left-0 right-0 w-full z-10"
         data-testid="reading-progress-container"
       >
-        <div
-          role="slider"
-          tabindex="0"
+        <!-- Accessible Native Range Input for Screen Readers / Assistive Tech -->
+        <label for="comic-progress-slider" class="sr-only">Comic Reading Progress</label>
+        <input
+          id="comic-progress-slider"
+          type="range"
+          min="1"
+          [max]="totalPages"
+          step="1"
+          [value]="humanPageNumber"
           aria-label="Comic Reading Progress"
-          [attr.aria-valuemin]="1"
-          [attr.aria-valuemax]="totalPages"
-          [attr.aria-valuenow]="humanPageNumber"
           [attr.aria-valuetext]="progressLabel"
+          (input)="onSliderInput($event)"
+          (change)="onSliderChange($event)"
+          class="sr-only"
+        />
+
+        <div
+          aria-hidden="true"
           (pointerdown)="onScrubberPointerDown($event); $event.stopPropagation()"
           (pointermove)="onScrubberPointerMove($event)"
           (pointerup)="onScrubberPointerUp($event)"
@@ -151,17 +161,7 @@
     </button>
   </div>
 
-  <!-- 4. Hidden Image Container (preloads images) -->
-  <div class="hidden" aria-hidden="true" style="display: none">
-    @if (hasNextPage) {
-      <img [src]="pages[currentIndex + 1].src" alt="" fetchpriority="low" />
-    }
-    @if (hasPreviousPage) {
-      <img [src]="pages[currentIndex - 1].src" alt="" fetchpriority="low" />
-    }
-  </div>
-
-  <!-- 5. Comic Archive Modal -->
+  <!-- 4. Comic Archive Modal -->
   @if (archiveModalOpen) {
     <dialog
       open

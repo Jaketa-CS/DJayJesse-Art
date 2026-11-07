@@ -5,8 +5,9 @@ import sharp from 'sharp';
 const SOURCE_DIR = path.resolve('public/comic-pages');
 const TARGET_DIR = path.resolve('public/comic-thumbs');
 const THUMB_WIDTH = 400;
-const THUMB_HEIGHT = 225; // 16:9 ratio matching 2560x1440
+const THUMB_HEIGHT = 225; // 16:9 ratio (for 2560x1440)
 const WEBP_QUALITY = 80;
+const FORCE_REGEN = process.argv.includes('--force');
 
 async function generateThumbnails() {
   if (!fs.existsSync(SOURCE_DIR)) {
@@ -28,34 +29,29 @@ async function generateThumbnails() {
   let generatedCount = 0;
   let skippedCount = 0;
 
-  // Process in batches of 16 to avoid file descriptor saturation while maximizing CPU cores
-  const BATCH_SIZE = 16;
-  for (let i = 0; i < files.length; i += BATCH_SIZE) {
-    const batch = files.slice(i, i + BATCH_SIZE);
-    await Promise.all(
-      batch.map(async (file) => {
-        const inputPath = path.join(SOURCE_DIR, file);
-        const outputFilename = file.replace(/\.png$/i, '.webp');
-        const outputPath = path.join(TARGET_DIR, outputFilename);
+  await Promise.all(
+    files.map(async (file) => {
+      const inputPath = path.join(SOURCE_DIR, file);
+      const outputFilename = file.replace(/\.png$/i, '.webp');
+      const outputPath = path.join(TARGET_DIR, outputFilename);
 
-        const inputStat = fs.statSync(inputPath);
-        if (fs.existsSync(outputPath)) {
-          const outputStat = fs.statSync(outputPath);
-          if (outputStat.mtimeMs >= inputStat.mtimeMs && outputStat.size > 0) {
-            skippedCount++;
-            return;
-          }
+      const inputStat = fs.statSync(inputPath);
+      if (!FORCE_REGEN && fs.existsSync(outputPath)) {
+        const outputStat = fs.statSync(outputPath);
+        if (outputStat.mtimeMs >= inputStat.mtimeMs && outputStat.size > 0) {
+          skippedCount++;
+          return;
         }
+      }
 
-        await sharp(inputPath)
-          .resize(THUMB_WIDTH, THUMB_HEIGHT, { fit: 'cover' })
-          .webp({ quality: WEBP_QUALITY })
-          .toFile(outputPath);
+      await sharp(inputPath)
+        .resize(THUMB_WIDTH, THUMB_HEIGHT, { fit: 'cover' })
+        .webp({ quality: WEBP_QUALITY })
+        .toFile(outputPath);
 
-        generatedCount++;
-      })
-    );
-  }
+      generatedCount++;
+    })
+  );
 
   const duration = ((Date.now() - startTime) / 1000).toFixed(2);
   console.log(
@@ -63,7 +59,9 @@ async function generateThumbnails() {
   );
 }
 
-generateThumbnails().catch((err) => {
+try {
+  await generateThumbnails();
+} catch (err) {
   console.error('Failed to generate thumbnails:', err);
   process.exit(1);
-});
+}
