@@ -177,13 +177,13 @@
                 [attr.aria-current]="i === currentIndex ? 'page' : null"
               >
                 <div
-                  class="relative w-full aspect-[16/10] overflow-hidden rounded bg-neutral-950 flex items-center justify-center"
+                  class="relative w-full aspect-[16/9] overflow-hidden rounded bg-neutral-950 flex items-center justify-center"
                 >
                   <img
-                    [ngSrc]="p.src"
+                    [ngSrc]="p.thumbSrc"
                     [alt]="p.pageLabel"
-                    width="320"
-                    height="200"
+                    width="400"
+                    height="225"
                     class="h-full w-full object-contain"
                   />
                   @if (i === currentIndex) {
