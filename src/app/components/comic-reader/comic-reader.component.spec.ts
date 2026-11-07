@@ -1184,6 +1184,44 @@ describe('ComicReaderComponent', () => {
         expect(preloadSpy).toHaveBeenCalled();
       });
 
+      it('should gate renderedImageSrc during continuous scrub so in-flight loads complete before swapping to latest page', () => {
+        const mockElement = {
+          getBoundingClientRect: () =>
+            ({
+              left: 0,
+              width: 1000,
+            }) as DOMRect,
+          setPointerCapture: vi.fn(),
+          releasePointerCapture: vi.fn(),
+          hasPointerCapture: vi.fn().mockReturnValue(true),
+        };
+
+        // Start drag at 20%
+        component.onScrubberPointerDown({
+          button: 0,
+          pointerType: 'mouse',
+          pointerId: 1,
+          currentTarget: mockElement,
+          clientX: 200,
+        } as unknown as PointerEvent);
+        const firstIndex = Math.floor(0.2 * component.totalPages);
+        expect(component.renderedImageSrc).toBe(component.pages[firstIndex].src);
+
+        // Move to 40% while first image is still in flight
+        component.onScrubberPointerMove({
+          currentTarget: mockElement,
+          clientX: 400,
+        } as unknown as PointerEvent);
+        const secondIndex = Math.floor(0.4 * component.totalPages);
+        expect(component.currentIndex).toBe(secondIndex);
+        // Keeps first image in DOM until it finishes loading instead of aborting mid-flight
+        expect(component.renderedImageSrc).toBe(component.pages[firstIndex].src);
+
+        // Once first image finishes loading, immediately swaps to latest cursor page
+        component.onImageLoad();
+        expect(component.renderedImageSrc).toBe(component.pages[secondIndex].src);
+      });
+
       it('should handle pointercancel and clean up scrub state immediately', () => {
         const mockElement = {
           getBoundingClientRect: () =>

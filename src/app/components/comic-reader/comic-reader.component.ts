@@ -40,6 +40,9 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   archiveModalOpen = false;
   isScrubbing = false;
   dragVisualPercent: number | null = null;
+  private scrubImageInFlight = false;
+  private committedScrubSrc: string | null = null;
+  private activeScrubRect: DOMRect | null = null;
   private scrubSettleTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly preloadedUrls = new Set<string>();
 
@@ -48,6 +51,13 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   // -------------------------------------------------------------
 
   get displayedImageSrc(): string {
+    return this.currentPage.src;
+  }
+
+  get renderedImageSrc(): string {
+    if (this.isScrubbing && this.committedScrubSrc !== null) {
+      return this.committedScrubSrc;
+    }
     return this.currentPage.src;
   }
 
@@ -304,6 +314,7 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
       this.currentIndex = targetIndex;
       this.imageError = false;
       this.dragVisualPercent = ((targetIndex + 1) / this.totalPages) * 100;
+      this.tryCommitScrubFrame(this.currentPage.src);
       this.scheduleScrubSettle();
       this.cdr?.markForCheck();
     }
@@ -318,6 +329,7 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     }
     this.isScrubbing = false;
     this.dragVisualPercent = null;
+    this.activeScrubRect = null;
     this.settleScrub();
   }
 
@@ -330,8 +342,10 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
       // Fallback
     }
     this.isScrubbing = true;
+    this.activeScrubRect = target.getBoundingClientRect();
     this.updateDragVisual(event.clientX, target);
     this.applyScrubIndex(event.clientX, target);
+    this.tryCommitScrubFrame(this.currentPage.src);
     this.scheduleScrubSettle();
   }
 
@@ -340,12 +354,14 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     if (event.pointerType === 'mouse' && event.buttons === 0) {
       this.isScrubbing = false;
       this.dragVisualPercent = null;
+      this.activeScrubRect = null;
       this.settleScrub();
       return;
     }
     const target = event.currentTarget as HTMLElement;
     this.updateDragVisual(event.clientX, target);
     this.applyScrubIndex(event.clientX, target);
+    this.tryCommitScrubFrame(this.currentPage.src);
     this.scheduleScrubSettle();
   }
 
@@ -362,6 +378,7 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
 
     this.isScrubbing = false;
     this.dragVisualPercent = null;
+    this.activeScrubRect = null;
     this.settleScrub();
   }
 
@@ -379,11 +396,19 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     this.applyScrubIndex(event.clientX, target);
     this.isScrubbing = false;
     this.dragVisualPercent = null;
+    this.activeScrubRect = null;
     this.settleScrub();
   }
 
+  private getScrubberRect(target: HTMLElement): DOMRect {
+    if (this.activeScrubRect && this.activeScrubRect.width > 0) {
+      return this.activeScrubRect;
+    }
+    return target.getBoundingClientRect();
+  }
+
   private updateDragVisual(clientX: number, target: HTMLElement): void {
-    const rect = target.getBoundingClientRect();
+    const rect = this.getScrubberRect(target);
     if (rect.width <= 0) return;
     const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
     this.dragVisualPercent = (x / rect.width) * 100;
@@ -391,7 +416,7 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   }
 
   private applyScrubIndex(clientX: number, target: HTMLElement): void {
-    const rect = target.getBoundingClientRect();
+    const rect = this.getScrubberRect(target);
     if (rect.width <= 0) return;
     const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
     const fraction = x / rect.width;
@@ -402,6 +427,15 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     if (targetIndex !== this.currentIndex) {
       this.currentIndex = targetIndex;
       this.imageError = false;
+      this.cdr?.markForCheck();
+    }
+  }
+
+  private tryCommitScrubFrame(targetSrc: string): void {
+    if (this.committedScrubSrc === targetSrc) return;
+    if (!this.scrubImageInFlight || this.preloadedUrls.has(targetSrc)) {
+      this.committedScrubSrc = targetSrc;
+      this.scrubImageInFlight = !this.preloadedUrls.has(targetSrc);
       this.cdr?.markForCheck();
     }
   }
@@ -421,6 +455,8 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
       clearTimeout(this.scrubSettleTimer);
       this.scrubSettleTimer = null;
     }
+    this.scrubImageInFlight = false;
+    this.committedScrubSrc = null;
     this.syncUrlWithCurrentPage();
     this.preloadAdjacentPages();
     this.cdr?.markForCheck();
@@ -430,12 +466,24 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   onImageLoad(): void {
     this.imageLoaded = true;
     this.imageError = false;
+    this.preloadedUrls.add(this.renderedImageSrc);
+    if (this.isScrubbing) {
+      this.scrubImageInFlight = false;
+      if (this.committedScrubSrc !== this.currentPage.src) {
+        this.committedScrubSrc = this.currentPage.src;
+        this.scrubImageInFlight = !this.preloadedUrls.has(this.currentPage.src);
+      }
+    } else {
+      this.scrubImageInFlight = false;
+      this.committedScrubSrc = null;
+    }
     this.cdr?.markForCheck();
   }
 
   onImageError(): void {
     this.imageLoaded = false;
     this.imageError = true;
+    this.scrubImageInFlight = false;
     this.cdr?.markForCheck();
   }
 
@@ -539,6 +587,8 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
       this.scrubSettleTimer = null;
     }
     this.isScrubbing = false;
+    this.scrubImageInFlight = false;
+    this.committedScrubSrc = null;
     this.currentIndex = newIndex;
     this.imageError = false;
 
