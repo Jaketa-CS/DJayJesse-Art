@@ -168,10 +168,10 @@
                 type="button"
                 [id]="'archive-page-' + i"
                 (click)="selectPageAndClose(i)"
-                class="group flex flex-col items-center rounded-lg border p-1.5 transition-all text-left focus:outline-none cursor-pointer {{
+                class="group flex flex-col items-center rounded-lg border p-1.5 transition-colors duration-200 ease-out text-left focus:outline-none cursor-pointer {{
                   i === currentIndex
                     ? 'border-neutral-200 bg-neutral-800 ring-2 ring-neutral-400'
-                    : 'border-neutral-800 bg-neutral-950/60 hover:border-neutral-600 hover:bg-neutral-800'
+                    : 'border-neutral-800 bg-neutral-950/60 hover:border-neutral-500 hover:bg-neutral-800/80'
                 }}"
                 [attr.aria-current]="i === currentIndex ? 'page' : null"
               >
@@ -183,7 +183,7 @@
                     [alt]="p.pageLabel"
                     width="320"
                     height="200"
-                    class="h-full w-full object-contain transition-opacity duration-150 group-hover:opacity-90"
+                    class="h-full w-full object-contain"
                   />
                   @if (i === currentIndex) {
                     <span
@@ -194,7 +194,7 @@
                   }
                 </div>
                 <div
-                  class="mt-1.5 w-full text-center text-xs font-medium text-neutral-300 group-hover:text-white"
+                  class="mt-1.5 w-full text-center text-xs font-medium text-neutral-400 group-hover:text-neutral-100 transition-colors duration-200 ease-out"
                 >
                   Page {{ i + 1 }}
                 </div>
