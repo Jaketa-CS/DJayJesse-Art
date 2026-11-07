@@ -49,9 +49,6 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
   // -------------------------------------------------------------
 
   get displayedImageSrc(): string {
-    if (this.isScrubbing && !this.showFullImage) {
-      return this.currentPage.thumbSrc;
-    }
     return this.currentPage.src;
   }
 
@@ -305,7 +302,7 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
     if (!Number.isNaN(pageNum)) {
       const targetIndex = Math.min(this.totalPages - 1, Math.max(0, pageNum - 1));
       this.isScrubbing = true;
-      this.showFullImage = false;
+      this.showFullImage = true;
       this.currentIndex = targetIndex;
       this.imageError = false;
       this.dragVisualPercent = ((targetIndex + 1) / this.totalPages) * 100;
@@ -336,7 +333,7 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
       // Fallback
     }
     this.isScrubbing = true;
-    this.showFullImage = false;
+    this.showFullImage = true;
     this.updateDragVisual(event.clientX, target);
     this.applyScrubIndex(event.clientX, target);
     this.scheduleScrubSettle();
@@ -351,7 +348,7 @@ export class ComicReaderComponent implements OnInit, OnDestroy {
       return;
     }
     const target = event.currentTarget as HTMLElement;
-    this.showFullImage = false;
+    this.showFullImage = true;
     this.updateDragVisual(event.clientX, target);
     this.applyScrubIndex(event.clientX, target);
     this.scheduleScrubSettle();

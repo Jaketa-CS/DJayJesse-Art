@@ -970,7 +970,7 @@ describe('ComicReaderComponent', () => {
       expect(mockElement.releasePointerCapture).toHaveBeenCalledWith(1);
     });
 
-    describe('Debounced Image Loading, Thumbnails & Settle Timing', () => {
+    describe('Debounced URL & Preload with Live High-Res Scrubbing', () => {
       beforeEach(() => {
         vi.useFakeTimers();
       });
@@ -979,7 +979,7 @@ describe('ComicReaderComponent', () => {
         vi.useRealTimers();
       });
 
-      it('should update label and scrubber position instantly, show thumbnail during drag, and defer URL and prefetch', () => {
+      it('should update label, scrubber position, and high-res image instantly during drag, while deferring URL and prefetch', () => {
         const mockElement = {
           getBoundingClientRect: () =>
             ({
@@ -1011,15 +1011,15 @@ describe('ComicReaderComponent', () => {
         expect(component.currentIndex).toBe(targetIndex);
         expect(component.humanPageNumber).toBe(targetIndex + 1);
         expect(component.progressLabel).toBe(`Page ${targetIndex + 1} of ${component.totalPages}`);
-        // Displays thumbnail during drag
-        expect(component.displayedImageSrc).toBe(component.pages[targetIndex].thumbSrc);
-        expect(component.displayedImageSrc).toContain('/comic-thumbs/');
+        // Displays high-res image during drag
+        expect(component.displayedImageSrc).toBe(component.pages[targetIndex].src);
+        expect(component.displayedImageSrc).toContain('/comic-pages-v1/');
         // URL and prefetch are deferred
         expect(navigateSpy).not.toHaveBeenCalled();
         expect(preloadSpy).not.toHaveBeenCalled();
       });
 
-      it('should load full WebP and trigger deferred URL update and neighbor prefetch only after ~120ms pause', () => {
+      it('should keep full WebP and trigger deferred URL update and neighbor prefetch after ~120ms pause', () => {
         const mockElement = {
           getBoundingClientRect: () =>
             ({
@@ -1048,7 +1048,7 @@ describe('ComicReaderComponent', () => {
 
         // Advance by 119ms (not settled yet)
         vi.advanceTimersByTime(119);
-        expect(component.displayedImageSrc).toBe(component.pages[targetIndex].thumbSrc);
+        expect(component.displayedImageSrc).toBe(component.pages[targetIndex].src);
         expect(navigateSpy).not.toHaveBeenCalled();
         expect(preloadSpy).not.toHaveBeenCalled();
 
@@ -1065,7 +1065,7 @@ describe('ComicReaderComponent', () => {
         expect(preloadSpy).toHaveBeenCalled();
       });
 
-      it('should load full WebP immediately upon pointer release before 120ms elapses', () => {
+      it('should settle URL and prefetch immediately upon pointer release before 120ms elapses', () => {
         const mockElement = {
           getBoundingClientRect: () =>
             ({
@@ -1098,7 +1098,7 @@ describe('ComicReaderComponent', () => {
         } as unknown as PointerEvent;
         component.onScrubberPointerMove(moveEvent);
         const moveIndex = Math.floor(0.5 * component.totalPages);
-        expect(component.displayedImageSrc).toBe(component.pages[moveIndex].thumbSrc);
+        expect(component.displayedImageSrc).toBe(component.pages[moveIndex].src);
         expect(navigateSpy).not.toHaveBeenCalled();
 
         // Release immediately at 40ms without waiting for 120ms
@@ -1156,7 +1156,7 @@ describe('ComicReaderComponent', () => {
         expect(preloadSpy).toHaveBeenCalled();
       });
 
-      it('should support slider input debouncing and thumbnail preview', () => {
+      it('should support slider input debouncing with live high-res page updates', () => {
         const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
         const preloadSpy = vi.spyOn(
           component as unknown as { preloadAdjacentPages: () => void },
@@ -1169,7 +1169,7 @@ describe('ComicReaderComponent', () => {
         expect(component.currentIndex).toBe(79);
         expect(component.isScrubbing).toBe(true);
         expect(component.humanPageNumber).toBe(80);
-        expect(component.displayedImageSrc).toBe(component.pages[79].thumbSrc);
+        expect(component.displayedImageSrc).toBe(component.pages[79].src);
         expect(navigateSpy).not.toHaveBeenCalled();
         expect(preloadSpy).not.toHaveBeenCalled();
 
