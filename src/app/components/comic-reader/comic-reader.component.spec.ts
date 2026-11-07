@@ -1275,6 +1275,51 @@ describe('ComicReaderComponent', () => {
           })
         );
       });
+
+      it('should maintain its locked 16:9 aspect class and mx-auto while isScrubbing is true', () => {
+        const frame = compiled.querySelector('[data-testid="comic-frame-container"]');
+        expect(frame).toBeTruthy();
+        expect(frame?.classList.contains('aspect-[16/9]')).toBe(true);
+        expect(frame?.classList.contains('mx-auto')).toBe(true);
+
+        const img = frame?.querySelector('img#comic-page-image') as HTMLImageElement;
+        expect(img).toBeTruthy();
+        expect(img.getAttribute('width')).toBe('1920');
+        expect(img.getAttribute('height')).toBe('1080');
+        expect(img.classList.contains('w-full')).toBe(true);
+        expect(img.classList.contains('h-full')).toBe(true);
+        expect(img.classList.contains('object-contain')).toBe(true);
+
+        const mockElement = {
+          getBoundingClientRect: () =>
+            ({
+              left: 0,
+              width: 1000,
+            }) as DOMRect,
+          setPointerCapture: vi.fn(),
+          releasePointerCapture: vi.fn(),
+          hasPointerCapture: vi.fn().mockReturnValue(true),
+        };
+
+        // Start scrubbing
+        const downEvent = {
+          button: 0,
+          pointerType: 'mouse',
+          pointerId: 1,
+          currentTarget: mockElement,
+          clientX: 250,
+        } as unknown as PointerEvent;
+        component.onScrubberPointerDown(downEvent);
+        expect(component.isScrubbing).toBe(true);
+
+        fixture.detectChanges();
+
+        // Frame preserves aspect-[16/9] and mx-auto while scrubbing
+        expect(frame?.classList.contains('aspect-[16/9]')).toBe(true);
+        expect(frame?.classList.contains('mx-auto')).toBe(true);
+        expect(img.classList.contains('w-full')).toBe(true);
+        expect(img.classList.contains('h-full')).toBe(true);
+      });
     });
   });
 
