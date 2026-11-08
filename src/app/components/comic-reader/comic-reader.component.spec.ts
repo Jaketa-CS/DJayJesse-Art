@@ -92,6 +92,11 @@ describe('ComicReaderComponent', () => {
       const pageSelect = getPageSelect();
       expect(pageSelect).toBeNull();
 
+      const pageCount = compiled.querySelector('[data-testid="page-count"]');
+      expect(pageCount).toBeTruthy();
+      expect(pageCount?.textContent?.replace(/\s+/g, ' ').trim()).toBe('1 / 313');
+      expect(pageCount?.classList.contains('shrink-0')).toBe(true);
+
       const progressBar = getProgressBar();
       expect(progressBar).toBeNull();
     });
@@ -109,6 +114,9 @@ describe('ComicReaderComponent', () => {
       expect(component.currentIndex).toBe(1);
       expect(component.currentPage.filename).toBe('Act1.2.png');
       expect(getImage().getAttribute('src')).toBe('/comic-pages-v1/Act1.2.webp');
+
+      const pageCount = compiled.querySelector('[data-testid="page-count"]');
+      expect(pageCount?.textContent?.replace(/\s+/g, ' ').trim()).toBe('2 / 313');
 
       // Previous button should now be enabled
       expect(getPrevButton().disabled).toBe(false);
@@ -894,6 +902,10 @@ describe('ComicReaderComponent', () => {
 
       const fill = container?.querySelector('[data-testid="reading-progress-fill"]');
       expect(fill).toBeTruthy();
+
+      const ball = container?.querySelector('[data-testid="reading-progress-ball"]');
+      expect(ball).toBeTruthy();
+      expect(ball?.classList.contains('rounded-full')).toBe(true);
     });
 
     it('should handle onSliderInput and onSliderChange correctly', () => {
@@ -1294,7 +1306,6 @@ describe('ComicReaderComponent', () => {
         const targetIndex = Math.floor(0.2 * component.totalPages);
         expect(component.isScrubbing).toBe(true);
 
-        // Pointer move event arrives with buttons === 0 (user released outside without capture)
         const ghostMoveEvent = {
           pointerType: 'mouse',
           buttons: 0,

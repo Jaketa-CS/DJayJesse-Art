@@ -9,7 +9,7 @@
     <!-- Image Wrapper with Bottom Scrubber Overlay -->
     <div
       data-testid="comic-frame-container"
-      class="relative w-[min(100%,calc(80vh*16/9))] aspect-[16/9] max-w-full overflow-hidden mx-auto"
+      class="relative w-[min(100%,calc(80vh*16/9))] aspect-[16/9] max-w-full mx-auto"
     >
       <img
         id="comic-page-image"
@@ -58,15 +58,20 @@
           (pointerup)="onScrubberPointerUp($event)"
           (pointercancel)="onScrubberPointerCancel($event)"
           (lostpointercapture)="onScrubberPointerCancel($event)"
-          class="group relative h-1.5 sm:h-2 w-full bg-neutral-700/80 hover:bg-neutral-700 hover:h-2.5 sm:hover:h-3 transition-all duration-150 cursor-pointer select-none touch-none {{
-            isScrubbing ? 'h-2.5 sm:h-3' : ''
-          }}"
+          class="group relative h-2 w-full bg-neutral-700/80 hover:bg-neutral-700 transition-colors duration-150 cursor-pointer select-none touch-none"
         >
           <!-- Progress Fill -->
           <div
             data-testid="reading-progress-fill"
-            class="h-full bg-white transition-colors duration-150"
+            class="h-full bg-white"
             [style.width.%]="progressExactPercentage"
+          ></div>
+
+          <!-- Scrubber Ball (Draggable Position Indicator) -->
+          <div
+            data-testid="reading-progress-ball"
+            class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-white pointer-events-none transition-transform duration-150 group-hover:scale-110"
+            [style.left]="'clamp(7px, ' + progressExactPercentage + '%, calc(100% - 7px))'"
           ></div>
         </div>
       </div>
@@ -102,8 +107,8 @@
     }
   </div>
 
-  <!-- 2. Centered Directly Below Comic: Left (←) and Right (→) Arrows -->
-  <div class="flex flex-wrap items-center justify-center gap-3 text-base">
+  <!-- 2. Centered Directly Below Comic: Left (←) and Right (→) Arrows with Stable Page Counter -->
+  <div class="flex items-center justify-center gap-3 text-base">
     <!-- Previous Button (←) -->
     <button
       type="button"
@@ -112,11 +117,22 @@
       data-test="prev-page-btn"
       (click)="previousPage()"
       [disabled]="isFirstPage"
-      class="inline-flex h-12 w-14 items-center justify-center rounded bg-neutral-900 text-3xl text-white border border-neutral-800 hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+      class="inline-flex h-12 w-14 shrink-0 items-center justify-center rounded bg-neutral-900 text-3xl text-white border border-neutral-800 hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
     >
       <span class="font-sans" aria-hidden="true">←</span>
       <span class="sr-only">Previous Page</span>
     </button>
+
+    <!-- Page Counter (currentPage / end)  -->
+    <div
+      data-testid="page-count"
+      aria-live="polite"
+      class="w-24 sm:w-28 shrink-0 grid grid-cols-[1fr_auto_1fr] items-center text-sm sm:text-base font-medium tabular-nums tracking-wider text-neutral-400 select-none"
+    >
+      <span class="text-right text-neutral-200">{{ humanPageNumber }}</span>
+      <span class="px-1 text-neutral-600"> / </span>
+      <span class="text-left text-neutral-400">{{ totalPages }}</span>
+    </div>
 
     <!-- Next Button (→) -->
     <button
@@ -126,7 +142,7 @@
       data-test="next-page-btn"
       (click)="nextPage()"
       [disabled]="isLastPage"
-      class="inline-flex h-12 w-14 items-center justify-center rounded bg-neutral-900 text-3xl text-white border border-neutral-800 hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+      class="inline-flex h-12 w-14 shrink-0 items-center justify-center rounded bg-neutral-900 text-3xl text-white border border-neutral-800 hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
     >
       <span class="font-sans" aria-hidden="true">→</span>
       <span class="sr-only">Next Page</span>
